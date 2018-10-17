@@ -44,8 +44,25 @@ func TestSolveSingleByteXorCipher(t *testing.T) {
 		if err != nil {
 			t.Errorf("SolveSingleByteXorCipher(%q) threw an error", c.in)
 		}
-		if got != c.want {
-			t.Errorf("SolveSingleByteXorCipher(%q) == %q, want %q", c.in, got, c.want)
+		if string(got.text) != c.want {
+			t.Errorf("SolveSingleByteXorCipher(%q) == %q, want %q", c.in, got.text, c.want)
+		}
+	}
+}
+
+func TestDetectSingleByteXorCipher(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"https://cryptopals.com/static/challenge-data/4.txt", "Now that the party is jumping\n"},
+	}
+	for _, c := range cases {
+		got, err := DetectSingleByteXorCipher(c.in)
+		if err != nil {
+			t.Errorf("DetectSingleByteXorCipher(%q) threw an error", c.in)
+		}
+		if string(got.text) != c.want {
+			t.Errorf("DetectSingleByteXorCipher(%q) == %q, want %q", c.in, got.text, c.want)
 		}
 	}
 }

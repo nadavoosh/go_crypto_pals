@@ -1,16 +1,25 @@
 package set1
 
 import (
+	"bufio"
 	// "fmt"
+	"io"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
 )
 
+// ScoredText is some text and a score of how likely it is to be English
+type ScoredText struct {
+	score float64
+	text  []byte
+}
+
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
-func SolveSingleByteXorCipher(h string) (string, error) {
+func SolveSingleByteXorCipher(h string) (ScoredText, error) {
 	minScore := float64(1000000)
-	var res string
+	var res ScoredText
 	var newScore float64
 	hBytes := HexToBytes(h)
 	for i := byte(0); i < 255; i++ {
@@ -20,8 +29,10 @@ func SolveSingleByteXorCipher(h string) (string, error) {
 		}
 		newScore = getScore(tprime)
 		if newScore < minScore {
+			res.score = newScore
+			res.text = tprime
 			minScore = newScore
-			res = string(tprime)
+			// fmt.Printf("byte: %s\n", string(i))
 		}
 	}
 	return res, nil
@@ -86,4 +97,43 @@ func getScore(text []byte) float64 {
 		score += s * s
 	}
 	return score
+}
+
+func DetectSingleByteXorCipher(url string) (ScoredText, error) {
+	lines, err := UrlToLines(url)
+	minScore := float64(1000000)
+	var res ScoredText
+	if err != nil {
+		return res, err
+	}
+	for _, h := range lines {
+		s, _ := SolveSingleByteXorCipher(h)
+		if s.score < minScore {
+			res = s
+			minScore = s.score
+		}
+	}
+	return res, nil
+}
+
+func UrlToLines(url string) ([]string, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return LinesFromReader(resp.Body)
+}
+
+func LinesFromReader(r io.Reader) ([]string, error) {
+	var lines []string
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return lines, nil
 }
