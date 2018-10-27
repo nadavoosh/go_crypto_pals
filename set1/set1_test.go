@@ -24,15 +24,19 @@ func TestHexFixedXor(t *testing.T) {
 	}
 }
 
-func TestSolveSingleByteXorCipher(t *testing.T) {
+func TestSolveSingleByteXorCipherHex(t *testing.T) {
 	in := "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 	want := "Cooking MC's like a pound of bacon"
-	got, err := SolveSingleByteXorCipher(in)
+	alsoWant := "X"
+	got, err := SolveSingleByteXorCipherHex(in)
 	if err != nil {
-		t.Errorf("SolveSingleByteXorCipher(%q) threw an error", in)
+		t.Errorf("SolveSingleByteXorCipherHex(%q) threw an error", in)
 	}
 	if string(got.text) != want {
-		t.Errorf("SolveSingleByteXorCipher(%q) == %q, want %q", in, got.text, want)
+		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.text, want)
+	}
+	if string(got.encryptionKey) != alsoWant {
+		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.encryptionKey, alsoWant)
 	}
 }
 
@@ -48,16 +52,16 @@ func TestDetectSingleByteXorCipher(t *testing.T) {
 	}
 }
 
-func TestEncryptRepeatingKeyXor(t *testing.T) {
+func TestRepeatingKeyXor(t *testing.T) {
 	in := "Burning 'em, if you ain't quick and nimble\nI go crazy when I hear a cymbal"
 	keyIn := "ICE"
 	want := "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
-	got, err := EncryptRepeatingKeyXor(in, keyIn)
+	got, err := RepeatingKeyXor(in, keyIn)
 	if err != nil {
-		t.Errorf("EncryptRepeatingKeyXor(%q) threw an error", in)
+		t.Errorf("RepeatingKeyXor(%q) threw an error", in)
 	}
 	if got != want {
-		t.Errorf("EncryptRepeatingKeyXor(%q) == %q, want %q", in, got, want)
+		t.Errorf("RepeatingKeyXor(%q) == %q, want %q", in, got, want)
 	}
 }
 
@@ -70,5 +74,17 @@ func TestHemmingDistance(t *testing.T) {
 	}
 	if got != want {
 		t.Errorf("HemmingDistance(%q, %q) == %d, want %d", in, in2, got, want)
+	}
+}
+
+func TestDecryptRepeatingKeyXor(t *testing.T) {
+	in := "https://cryptopals.com/static/challenge-data/6.txt"
+	want := "Nadavie"
+	got, err := DecryptRepeatingKeyXorFromURL(in)
+	if err != nil {
+		t.Errorf("DecryptRepeatingKeyXorFromURL(%q) threw an error: %s", in, err)
+	}
+	if string(got) != want {
+		t.Errorf("DecryptRepeatingKeyXorFromURL(%q) == %q, want %q", in, got, want)
 	}
 }

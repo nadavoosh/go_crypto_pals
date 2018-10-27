@@ -2,7 +2,7 @@ package set1
 
 import (
 	"bufio"
-	// "fmt"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,27 +12,35 @@ import (
 
 // ScoredText is some text and a score of how likely it is to be English
 type ScoredText struct {
-	score float64
-	text  []byte
+	encryptionKey byte
+	score         float64
+	text          []byte
+}
+
+// SolveSingleByteXorCipherHex examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
+func SolveSingleByteXorCipherHex(h string) (ScoredText, error) {
+	hBytes := HexToBytes(h)
+	return SolveSingleByteXorCipher(hBytes)
 }
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
-func SolveSingleByteXorCipher(h string) (ScoredText, error) {
+func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
 	minScore := float64(1000000)
 	var res ScoredText
 	var newScore float64
-	hBytes := HexToBytes(h)
 	for i := byte(0); i < 255; i++ {
 		tprime, err := singleByteXor(hBytes, i)
 		if err != nil {
 			log.Fatal(err)
 		}
 		newScore = getScore(tprime)
+		// fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, tprime, string(i), newScore, minScore)
 		if newScore < minScore {
+			fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, string(i), tprime, newScore, minScore)
 			res.score = newScore
 			res.text = tprime
+			res.encryptionKey = i
 			minScore = newScore
-			// fmt.Printf("byte: %s\n", string(i))
 		}
 	}
 	return res, nil
@@ -78,6 +86,9 @@ func getLetterFreqMapForEnglish() map[string]float64 {
 	return m
 }
 
+func GetScore(text []byte) float64 {
+	return getScore(text)
+}
 func getScore(text []byte) float64 {
 	// lower score is more likely to be english
 	var s float64
@@ -86,15 +97,19 @@ func getScore(text []byte) float64 {
 		log.Fatal(err)
 	}
 	alphabetical := a.ReplaceAllString(string(text), "")
-	// 10 point penalty for every non alphabetical character other than space
-	score := float64(len(string(text))-len(alphabetical)) * 10
+	// 1000 point penalty for every non alphabetical character other than space
+	// fmt.Printf("Now scoring %s\n", string(text))
+
+	score := float64(len(string(text))-len(alphabetical)) * 1000
 	lowerText := strings.ToLower(string(alphabetical))
 
-	m := getLetterFreqMapForEnglish()
-	total := float64(len(lowerText))
-	for char, value := range m {
-		s = (float64(strings.Count(lowerText, char))/total*100 - value)
-		score += s * s
+	if len(lowerText) > 0 {
+		m := getLetterFreqMapForEnglish()
+		total := float64(len(lowerText))
+		for char, value := range m {
+			s = (float64(strings.Count(lowerText, char))/total*100 - value)
+			score += s * s
+		}
 	}
 	return score
 }
@@ -107,7 +122,10 @@ func DetectSingleByteXorCipher(url string) (ScoredText, error) {
 		return res, err
 	}
 	for _, h := range lines {
-		s, _ := SolveSingleByteXorCipher(h)
+		s, err := SolveSingleByteXorCipherHex(h)
+		if err != nil {
+			return s, err
+		}
 		if s.score < minScore {
 			res = s
 			minScore = s.score
