@@ -35,12 +35,20 @@ func HexFixedXor(hexString1, hexString2 string) (string, error) {
 
 // FixedXor takes two equal-length byte arrays strings and produces their XOR combination.
 func FixedXor(b1, b2 []byte) ([]byte, error) {
-	if len(b1) != len(b2) {
-		return nil, errors.New("fixedXorBytes requires byte slices of equal length")
+	if err := AssertEqualLen(b1, b2); err != nil {
+		return nil, err
 	}
 	b := make([]byte, len(b1))
 	for i := range b {
 		b[i] = b1[i] ^ b2[i]
 	}
 	return b, nil
+}
+
+// AssertEqualLen returns an error if two byte slices are of different length
+func AssertEqualLen(b1, b2 []byte) error {
+	if len(b1) != len(b2) {
+		return errors.New("fixedXorBytes requires byte slices of equal length")
+	}
+	return nil
 }
