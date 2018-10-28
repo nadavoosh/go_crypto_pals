@@ -13,8 +13,32 @@ import (
 // ScoredText is some text and a score of how likely it is to be English
 type ScoredText struct {
 	encryptionKey byte
-	score         float64
 	text          []byte
+}
+
+type HumanText interface {
+	score() float64
+}
+
+type DecryptionResult struct {
+	key       string
+	plaintext string
+}
+
+func GetScore(text []byte) float64 {
+	return getScore(text)
+}
+
+func (d DecryptionResult) score() float64 {
+	if d.plaintext == "" {
+		// return a high score for uninitialized DecryptionResult
+		return float64(1e10)
+	}
+	return getScore([]byte(d.plaintext))
+}
+
+func (s ScoredText) score() float64 {
+	return getScore(s.text)
 }
 
 // SolveSingleByteXorCipherHex examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
@@ -25,9 +49,6 @@ func SolveSingleByteXorCipherHex(h string) (ScoredText, error) {
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
 func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
-	// fmt.Printf("SolveSingleByteXorCipher solving %#x\n", hBytes)
-	// now solving 0x3162333733373333333133363366373831353162376632623738333433313333336437383339373832383337326433363363373833373365373833613339336233373336
-	// now solving 0x1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736
 	minScore := float64(1000000)
 	var res ScoredText
 	var newScore float64
@@ -37,10 +58,7 @@ func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
 			log.Fatal(err)
 		}
 		newScore = getScore(tprime)
-		// fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, string(i), tprime, newScore, minScore)
 		if newScore < minScore {
-			// fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, string(i), tprime, newScore, minScore)
-			res.score = newScore
 			res.text = tprime
 			res.encryptionKey = i
 			minScore = newScore
@@ -89,9 +107,6 @@ func getLetterFreqMapForEnglish() map[string]float64 {
 	return m
 }
 
-func GetScore(text []byte) float64 {
-	return getScore(text)
-}
 func getScore(text []byte) float64 {
 	// lower score is more likely to be english
 	var s float64
@@ -129,9 +144,9 @@ func DetectSingleByteXorCipher(url string) (ScoredText, error) {
 		if err != nil {
 			return s, err
 		}
-		if s.score < minScore {
+		if s.score() < minScore {
 			res = s
-			minScore = s.score
+			minScore = s.score()
 		}
 	}
 	return res, nil

@@ -8,16 +8,6 @@ import (
 	"strings"
 )
 
-type DecryptionResult struct {
-	key       string
-	plaintext string
-	score     float64
-}
-
-type HumanText interface {
-	score() float64
-}
-
 func DecryptRepeatingKeyXorFromURL(url string) (DecryptionResult, error) {
 	lines, err := UrlToLines(url)
 	if err != nil {
@@ -56,7 +46,7 @@ func DecryptRepeatingKeyXor(hexCipher string) (DecryptionResult, error) {
 		if err != nil {
 			return DecryptionResult{}, err
 		}
-		if r.score < res.score || res.score == 0 {
+		if r.score() < res.score() {
 			res = r
 		}
 	}
@@ -94,8 +84,7 @@ func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (DecryptionResult,
 		return DecryptionResult{}, err
 	}
 	fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
-	// fmt.Printf("Best guess for plaintext is %s\n", HexToBytes(hplain))
-	return DecryptionResult{key: decryptionKey, plaintext: string(HexToBytes(hplain)), score: GetScore(HexToBytes(hplain))}, nil
+	return DecryptionResult{key: decryptionKey, plaintext: string(HexToBytes(hplain))}, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {
