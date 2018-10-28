@@ -6,9 +6,13 @@ import (
 	"log"
 )
 
-// EncryptRepeatingKeyXor sequentially applies each byte of the key to the plaintext and returns the result hex encoded
-func EncryptRepeatingKeyXor(plain string, key string) (string, error) {
+// RepeatingKeyXor sequentially applies each byte of the key to the plaintext and returns the result hex encoded
+func RepeatingKeyXor(plain string, key string) (string, error) {
 	p := []byte(plain)
+	return RepeatingKeyXorBytes(p, key)
+}
+
+func RepeatingKeyXorBytes(p []byte, key string) (string, error) {
 	b, err := FixedXor(p, repeatBytesToLegnth([]byte(key), len(p)))
 	if err != nil {
 		log.Fatal(err)
