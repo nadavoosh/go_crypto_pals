@@ -2,7 +2,7 @@ package set1
 
 import (
 	"bufio"
-	"fmt"
+	// "fmt"
 	"io"
 	"log"
 	"net/http"
@@ -25,6 +25,9 @@ func SolveSingleByteXorCipherHex(h string) (ScoredText, error) {
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
 func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
+	// fmt.Printf("SolveSingleByteXorCipher solving %#x\n", hBytes)
+	// now solving 0x3162333733373333333133363366373831353162376632623738333433313333336437383339373832383337326433363363373833373365373833613339336233373336
+	// now solving 0x1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736
 	minScore := float64(1000000)
 	var res ScoredText
 	var newScore float64
@@ -34,9 +37,9 @@ func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
 			log.Fatal(err)
 		}
 		newScore = getScore(tprime)
-		// fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, tprime, string(i), newScore, minScore)
+		// fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, string(i), tprime, newScore, minScore)
 		if newScore < minScore {
-			fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, string(i), tprime, newScore, minScore)
+			// fmt.Printf("%d byte: %s yeilding %s with score: %g while minscore is %g\n", i, string(i), tprime, newScore, minScore)
 			res.score = newScore
 			res.text = tprime
 			res.encryptionKey = i

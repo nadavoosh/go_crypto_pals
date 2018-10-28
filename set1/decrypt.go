@@ -1,19 +1,33 @@
 package set1
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
 	"strings"
 )
 
-func DecryptRepeatingKeyXorFromURL(url string) (string, error) {
+type DecryptionResult struct {
+	key       string
+	plaintext string
+	score     float64
+}
+
+type HumanText interface {
+	score() float64
+}
+
+func DecryptRepeatingKeyXorFromURL(url string) (DecryptionResult, error) {
 	lines, err := UrlToLines(url)
 	if err != nil {
-		return "", err
+		return DecryptionResult{}, err
 	}
-	decoded := strings.Join(lines, "")
-	return DecryptRepeatingKeyXor(decoded)
+	decoded, err := base64.StdEncoding.DecodeString(strings.Join(lines, ""))
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	return DecryptRepeatingKeyXor(fmt.Sprintf("%0x", decoded))
 
 }
 
@@ -29,24 +43,21 @@ func chunk(b []byte, chunkSize int) [][]byte {
 	return chunks
 }
 
-func DecryptRepeatingKeyXor(cipher string) (string, error) {
-	b := []byte(cipher)
+func DecryptRepeatingKeyXor(hexCipher string) (DecryptionResult, error) {
+	b := HexToBytes(hexCipher)
 	keysizes, err := guessKeysize(b)
 	if err != nil {
-		return "", err
+		return DecryptionResult{}, err
 	}
-	fmt.Printf("Best guesses for keysize is %d\n", keysizes)
-	minScore := float64(1000000)
-	var res string
+	fmt.Printf("Best guesses for keysize are %d\n", keysizes)
+	var res DecryptionResult
 	for i := 0; i < len(keysizes); i++ {
-		fmt.Printf("\n\n\n\n\n\nRunning with keysize %d\n", keysizes[i])
-		newScore, text, err := DecryptRepeatingKeyXorWithKeysize(b, keysizes[i])
+		r, err := DecryptRepeatingKeyXorWithKeysize(b, keysizes[i])
 		if err != nil {
-			return "", err
+			return DecryptionResult{}, err
 		}
-		if newScore < minScore {
-			res = text
-			minScore = newScore
+		if r.score < res.score || res.score == 0 {
+			res = r
 		}
 	}
 	return res, nil
@@ -66,44 +77,25 @@ func transpose(b [][]byte, keysize int) [][]byte {
 	return transposed
 }
 
-// func sumByteArray(b []byte) int {
-// 	sum := 0
-// 	for i := 0; i < len(b); i++ {
-// 		sum += b[i]
-// 	}
-// 	return sum
-// }
-
-// func sumByteArrayArray(b [][]byte) (int, error) {
-// 	sum:=0
-// 	for i := 0; i < len(b); i++ {
-// 		sum += sumByteArray()
-// 	}
-// 	return sum, nil
-// }
-
-func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (float64, string, error) {
+func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (DecryptionResult, error) {
 	blocks := chunk(b, keysize)
-	fmt.Printf("We have %d blocks of len %d\n", len(blocks), len(blocks[0]))
-	// fmt.Printf("sumByteArray of blocks are %d\n", sumByteArray(blocks))
 	t := transpose(blocks, keysize)
-	fmt.Printf("We have %d transposed blocks of len %d \n", len(t), len(t[0]))
 	key := make([]string, keysize)
 	for i := 0; i < keysize; i++ {
 		s, err := SolveSingleByteXorCipher(t[i])
 		if err != nil {
-			return 0, "", err
+			return DecryptionResult{}, err
 		}
 		key[i] = string(s.encryptionKey)
 	}
 	decryptionKey := strings.Join(key, "")
-	// fmt.Printf("Best guess for key is %s\n", string(decryptionKey))
-	hplain, err := RepeatingKeyXor(fmt.Sprintf("%x", b), decryptionKey)
+	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)
 	if err != nil {
-		return 0, "", err
+		return DecryptionResult{}, err
 	}
-
-	return GetScore([]byte(hplain)), string(HexToBytes(hplain)), nil
+	fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
+	// fmt.Printf("Best guess for plaintext is %s\n", HexToBytes(hplain))
+	return DecryptionResult{key: decryptionKey, plaintext: string(HexToBytes(hplain)), score: GetScore(HexToBytes(hplain))}, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {
@@ -143,7 +135,7 @@ func guessKeysizeAveraged(b []byte, numBlocks int) ([]int, error) {
 	if numBlocks < 2 {
 		return nil, errors.New("Need at least 2 blocks to compare")
 	}
-	for keysize := 2; keysize < 40; keysize++ {
+	for keysize := 1; keysize < 40; keysize++ {
 		var newScore int
 		for i := 0; i < (numBlocks - 1); i++ {
 			s, err := hemmingDistanceBytes(b[keysize*i:keysize*(i+1)], b[keysize*(i+1):keysize*(i+2)])
@@ -155,7 +147,7 @@ func guessKeysizeAveraged(b []byte, numBlocks int) ([]int, error) {
 		}
 		normalized := float64(newScore) / float64(keysize) / float64(numBlocks-1)
 		// fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
-		NumberOfKeyGuessesToReturn := 5
+		NumberOfKeyGuessesToReturn := 3
 		if len(keyGuessesMap) < NumberOfKeyGuessesToReturn {
 			// fmt.Printf("Initializing by adding key %b with score %g\n", keysize, normalized)
 			keyGuessesMap[keysize] = normalized
