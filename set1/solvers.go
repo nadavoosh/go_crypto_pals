@@ -38,6 +38,10 @@ func (d DecryptionResult) score() float64 {
 }
 
 func (s ScoredText) score() float64 {
+	if s.text == nil {
+		// return a high score for uninitialized ScoredText
+		return float64(1e10)
+	}
 	return getScore(s.text)
 }
 
@@ -49,7 +53,6 @@ func SolveSingleByteXorCipherHex(h string) (ScoredText, error) {
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
 func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
-	minScore := float64(1000000)
 	var res ScoredText
 	var newScore float64
 	for i := byte(0); i < 255; i++ {
@@ -58,10 +61,9 @@ func SolveSingleByteXorCipher(hBytes []byte) (ScoredText, error) {
 			log.Fatal(err)
 		}
 		newScore = getScore(tprime)
-		if newScore < minScore {
+		if newScore < res.score() {
 			res.text = tprime
 			res.encryptionKey = i
-			minScore = newScore
 		}
 	}
 	return res, nil
@@ -134,7 +136,6 @@ func getScore(text []byte) float64 {
 
 func DetectSingleByteXorCipher(url string) (ScoredText, error) {
 	lines, err := UrlToLines(url)
-	minScore := float64(1000000)
 	var res ScoredText
 	if err != nil {
 		return res, err
@@ -144,9 +145,8 @@ func DetectSingleByteXorCipher(url string) (ScoredText, error) {
 		if err != nil {
 			return s, err
 		}
-		if s.score() < minScore {
+		if s.score() < res.score() {
 			res = s
-			minScore = s.score()
 		}
 	}
 	return res, nil
