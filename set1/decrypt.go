@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func DecryptRepeatingKeyXorFromURL(url string) (DecryptionResult, error) {
-	lines, err := UrlToLines(url)
+func DecryptRepeatingKeyXorFromBase64(filename string) (DecryptionResult, error) {
+	lines, err := ScanFile(filename)
 	if err != nil {
 		return DecryptionResult{}, err
 	}
@@ -17,7 +17,7 @@ func DecryptRepeatingKeyXorFromURL(url string) (DecryptionResult, error) {
 	if err != nil {
 		return DecryptionResult{}, err
 	}
-	return DecryptRepeatingKeyXor(fmt.Sprintf("%0x", decoded))
+	return DecryptRepeatingKeyXorHex(HexEncoded{hexString: fmt.Sprintf("%0x", decoded)})
 
 }
 
@@ -33,13 +33,16 @@ func chunk(b []byte, chunkSize int) [][]byte {
 	return chunks
 }
 
-func DecryptRepeatingKeyXor(hexCipher string) (DecryptionResult, error) {
-	b := HexToBytes(hexCipher)
+func DecryptRepeatingKeyXorHex(hexCipher HexEncoded) (DecryptionResult, error) {
+	return decryptRepeatingKeyXor(hexCipher.getBytes())
+}
+
+func decryptRepeatingKeyXor(b []byte) (DecryptionResult, error) {
 	keysizes, err := guessKeysize(b)
 	if err != nil {
 		return DecryptionResult{}, err
 	}
-	fmt.Printf("Best guesses for keysize are %d\n", keysizes)
+	// fmt.Printf("Best guesses for keysize are %d\n", keysizes)
 	var res DecryptionResult
 	for i := 0; i < len(keysizes); i++ {
 		r, err := DecryptRepeatingKeyXorWithKeysize(b, keysizes[i])
@@ -79,11 +82,11 @@ func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (DecryptionResult,
 		key[i] = string(s.key)
 	}
 	decryptionKey := strings.Join(key, "")
-	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)
+	hplain, err := RepeatingKeyXorBytes(b, []byte(decryptionKey))
 	if err != nil {
 		return DecryptionResult{}, err
 	}
-	fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
+	// fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
 	return DecryptionResult{key: decryptionKey, plaintext: string(HexToBytes(hplain))}, nil
 }
 
@@ -101,7 +104,7 @@ func guessKeysizeBasic(b []byte) (int, error) {
 			return keyGuess, err
 		}
 		normalized := float64(newScore) / float64(keysize)
-		fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
+		// fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
 		if normalized < minScore {
 			minScore = normalized
 			keyGuess = keysize
