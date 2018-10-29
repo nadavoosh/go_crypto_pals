@@ -76,7 +76,7 @@ func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (DecryptionResult,
 		if err != nil {
 			return DecryptionResult{}, err
 		}
-		key[i] = string(s.encryptionKey)
+		key[i] = string(s.key)
 	}
 	decryptionKey := strings.Join(key, "")
 	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)

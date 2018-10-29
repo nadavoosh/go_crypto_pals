@@ -32,11 +32,11 @@ func TestSolveSingleByteXorCipherHex(t *testing.T) {
 	if err != nil {
 		t.Errorf("SolveSingleByteXorCipherHex(%q) threw an error", in)
 	}
-	if string(got.text) != want {
-		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.text, want)
+	if string(got.plaintext) != want {
+		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.plaintext, want)
 	}
-	if string(got.encryptionKey) != alsoWant {
-		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.encryptionKey, alsoWant)
+	if string(got.key) != alsoWant {
+		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.key, alsoWant)
 	}
 }
 
@@ -47,8 +47,8 @@ func TestDetectSingleByteXorCipher(t *testing.T) {
 	if err != nil {
 		t.Errorf("DetectSingleByteXorCipher(%q) threw an error", in)
 	}
-	if string(got.text) != want {
-		t.Errorf("DetectSingleByteXorCipher(%q) == %q, want %q", in, got.text, want)
+	if string(got.plaintext) != want {
+		t.Errorf("DetectSingleByteXorCipher(%q) == %q, want %q", in, got.plaintext, want)
 	}
 }
 
