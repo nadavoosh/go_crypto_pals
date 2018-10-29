@@ -14,14 +14,6 @@ type DecryptionResult struct {
 	plaintext string
 }
 
-type HexEncoded struct {
-	hexString string
-}
-
-func (h HexEncoded) getBytes() []byte {
-	return HexToBytes(h.hexString)
-}
-
 func (d DecryptionResult) score() float64 {
 	if d.plaintext == "" {
 		// return a high score for uninitialized DecryptionResult

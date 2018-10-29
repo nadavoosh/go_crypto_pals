@@ -8,9 +8,12 @@ import (
 	"log"
 )
 
-// HexToBytes converts a hex string to bytes
-func HexToBytes(s string) []byte {
-	src := []byte(s)
+type HexEncoded struct {
+	hexString string
+}
+
+func (h HexEncoded) getBytes() []byte {
+	src := []byte(h.hexString)
 	dst := make([]byte, hex.DecodedLen(len(src)))
 	_, err := hex.Decode(dst, src)
 	if err != nil {
@@ -20,16 +23,16 @@ func HexToBytes(s string) []byte {
 }
 
 // HexToBase64 converts a hex string to a base64 string
-func HexToBase64(s string) string {
-	return base64.StdEncoding.EncodeToString(HexToBytes(s))
+func HexToBase64(h HexEncoded) string {
+	return base64.StdEncoding.EncodeToString(h.getBytes())
 }
 
 // HexFixedXor takes two equal-length hex strings and produces their XOR combination.
-func HexFixedXor(hexString1, hexString2 string) (string, error) {
-	if len(hexString1) != len(hexString2) {
+func HexFixedXor(hexString1, hexString2 HexEncoded) (string, error) {
+	if len(hexString1.hexString) != len(hexString2.hexString) {
 		return "", errors.New("FixedXor requires hex strings of equal length")
 	}
-	b, err := FixedXor(HexToBytes(hexString1), HexToBytes(hexString2))
+	b, err := FixedXor(hexString1.getBytes(), hexString2.getBytes())
 	return fmt.Sprintf("%x", b), err
 }
 
