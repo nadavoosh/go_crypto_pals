@@ -7,18 +7,18 @@ import (
 )
 
 // RepeatingKeyXor sequentially applies each byte of the key to the plaintext and returns the result hex encoded
-func RepeatingKeyXor(plain string, key string) (string, error) {
-	p := []byte(plain)
-	return RepeatingKeyXorBytes(p, key)
+func RepeatingKeyXor(plain, key string) (string, error) {
+	res, err := RepeatingKeyXorBytes([]byte(plain), []byte(key))
+	return fmt.Sprintf("%x", res), err
 }
 
-func RepeatingKeyXorBytes(p []byte, key string) (string, error) {
-	b, err := FixedXor(p, repeatBytesToLegnth([]byte(key), len(p)))
+func RepeatingKeyXorBytes(p, key []byte) ([]byte, error) {
+	b, err := FixedXor(p, repeatBytesToLegnth(key, len(p)))
 	if err != nil {
 		log.Fatal(err)
-		return "", err
+		return nil, err
 	}
-	return fmt.Sprintf("%x", b), nil
+	return b, nil
 }
 
 func repeatBytesToLegnth(b []byte, l int) []byte {

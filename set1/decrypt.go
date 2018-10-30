@@ -1,6 +1,7 @@
 package set1
 
 import (
+	"crypto/aes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -8,8 +9,8 @@ import (
 	"strings"
 )
 
-func DecryptRepeatingKeyXorFromURL(url string) (DecryptionResult, error) {
-	lines, err := UrlToLines(url)
+func DecryptRepeatingKeyXorFromBase64(filename string) (DecryptionResult, error) {
+	lines, err := ScanFile(filename)
 	if err != nil {
 		return DecryptionResult{}, err
 	}
@@ -17,8 +18,7 @@ func DecryptRepeatingKeyXorFromURL(url string) (DecryptionResult, error) {
 	if err != nil {
 		return DecryptionResult{}, err
 	}
-	return DecryptRepeatingKeyXor(fmt.Sprintf("%0x", decoded))
-
+	return DecryptRepeatingKeyXorHex(HexEncoded{hexString: fmt.Sprintf("%0x", decoded)})
 }
 
 func chunk(b []byte, chunkSize int) [][]byte {
@@ -33,13 +33,16 @@ func chunk(b []byte, chunkSize int) [][]byte {
 	return chunks
 }
 
-func DecryptRepeatingKeyXor(hexCipher string) (DecryptionResult, error) {
-	b := HexToBytes(hexCipher)
+func DecryptRepeatingKeyXorHex(hexCipher HexEncoded) (DecryptionResult, error) {
+	return decryptRepeatingKeyXor(hexCipher.getBytes())
+}
+
+func decryptRepeatingKeyXor(b []byte) (DecryptionResult, error) {
 	keysizes, err := guessKeysize(b)
 	if err != nil {
 		return DecryptionResult{}, err
 	}
-	fmt.Printf("Best guesses for keysize are %d\n", keysizes)
+	// fmt.Printf("Best guesses for keysize are %d\n", keysizes)
 	var res DecryptionResult
 	for i := 0; i < len(keysizes); i++ {
 		r, err := DecryptRepeatingKeyXorWithKeysize(b, keysizes[i])
@@ -56,7 +59,6 @@ func DecryptRepeatingKeyXor(hexCipher string) (DecryptionResult, error) {
 func transpose(b [][]byte, keysize int) [][]byte {
 	transposed := make([][]byte, keysize)
 	for _, block := range b {
-		// fmt.Printf("processing block number %d\n", n)
 		for i := 0; i < keysize; i++ {
 			if len(block) > i {
 				transposed[i] = append(transposed[i], block[i])
@@ -76,15 +78,15 @@ func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (DecryptionResult,
 		if err != nil {
 			return DecryptionResult{}, err
 		}
-		key[i] = string(s.encryptionKey)
+		key[i] = string(s.key)
 	}
 	decryptionKey := strings.Join(key, "")
-	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)
+	hplain, err := RepeatingKeyXorBytes(b, []byte(decryptionKey))
 	if err != nil {
 		return DecryptionResult{}, err
 	}
-	fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
-	return DecryptionResult{key: decryptionKey, plaintext: string(HexToBytes(hplain))}, nil
+	// fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
+	return DecryptionResult{key: decryptionKey, plaintext: string(hplain)}, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {
@@ -101,7 +103,7 @@ func guessKeysizeBasic(b []byte) (int, error) {
 			return keyGuess, err
 		}
 		normalized := float64(newScore) / float64(keysize)
-		fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
+		// fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
 		if normalized < minScore {
 			minScore = normalized
 			keyGuess = keysize
@@ -185,4 +187,31 @@ func bitsDifferent(b1, b2 byte) int {
 		}
 	}
 	return diff
+}
+func Decrypt_AES_ECB_FromBase64File(filename, encryptionKey string) (DecryptionResult, error) {
+	lines, err := ScanFile(filename)
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	return Decrypt_AES_ECB(strings.Join(lines, ""), encryptionKey)
+}
+
+func Decrypt_AES_ECB(ciphertext, encryptionKey string) (DecryptionResult, error) {
+	decoded, err := base64.StdEncoding.DecodeString(ciphertext)
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	cipher, err := aes.NewCipher([]byte(encryptionKey))
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	var plaintext []byte
+	blocks := chunk([]byte(decoded), aes.BlockSize)
+	for _, block := range blocks {
+		dst := make([]byte, aes.BlockSize)
+		cipher.Decrypt(dst, block)
+		plaintext = append(plaintext, dst...)
+	}
+
+	return DecryptionResult{plaintext: string(plaintext)}, nil
 }
