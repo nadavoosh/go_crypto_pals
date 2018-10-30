@@ -215,3 +215,52 @@ func Decrypt_AES_ECB(ciphertext, encryptionKey string) (DecryptionResult, error)
 
 	return DecryptionResult{plaintext: string(plaintext)}, nil
 }
+
+func testEq(a, b []byte) bool {
+	// If one is nil, the other must also be nil.
+	if (a == nil) != (b == nil) {
+		return false
+	}
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func smellsOfECB(b []byte) bool {
+	blocks := chunk(b, aes.BlockSize)
+	for _, block := range blocks {
+		count := 0
+		for _, b := range blocks {
+			if testEq(b, block) {
+				count++
+			}
+		}
+		if count > 1 {
+			return true
+		}
+	}
+	return false
+}
+
+func DetectAESinECBFromFile(filename string) ([]HexEncoded, error) {
+	lines, err := ScanFile(filename)
+	var ECBs []HexEncoded
+	if err != nil {
+		return nil, err
+	}
+
+	for _, l := range lines {
+		h := HexEncoded{hexString: l}
+		if smellsOfECB(h.getBytes()) {
+			// fmt.Printf("%s seemss like it was encrypted with ECB\n", h)
+			ECBs = append(ECBs, h)
+		}
+	}
+	return ECBs, nil
+}
