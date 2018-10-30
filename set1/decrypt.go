@@ -1,6 +1,7 @@
 package set1
 
 import (
+	"crypto/aes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -18,7 +19,6 @@ func DecryptRepeatingKeyXorFromBase64(filename string) (DecryptionResult, error)
 		return DecryptionResult{}, err
 	}
 	return DecryptRepeatingKeyXorHex(HexEncoded{hexString: fmt.Sprintf("%0x", decoded)})
-
 }
 
 func chunk(b []byte, chunkSize int) [][]byte {
@@ -59,7 +59,6 @@ func decryptRepeatingKeyXor(b []byte) (DecryptionResult, error) {
 func transpose(b [][]byte, keysize int) [][]byte {
 	transposed := make([][]byte, keysize)
 	for _, block := range b {
-		// fmt.Printf("processing block number %d\n", n)
 		for i := 0; i < keysize; i++ {
 			if len(block) > i {
 				transposed[i] = append(transposed[i], block[i])
@@ -188,4 +187,31 @@ func bitsDifferent(b1, b2 byte) int {
 		}
 	}
 	return diff
+}
+func Decrypt_AES_ECB_FromBase64File(filename, encryptionKey string) (DecryptionResult, error) {
+	lines, err := ScanFile(filename)
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	return Decrypt_AES_ECB(strings.Join(lines, ""), encryptionKey)
+}
+
+func Decrypt_AES_ECB(ciphertext, encryptionKey string) (DecryptionResult, error) {
+	decoded, err := base64.StdEncoding.DecodeString(ciphertext)
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	cipher, err := aes.NewCipher([]byte(encryptionKey))
+	if err != nil {
+		return DecryptionResult{}, err
+	}
+	var plaintext []byte
+	blocks := chunk([]byte(decoded), aes.BlockSize)
+	for _, block := range blocks {
+		dst := make([]byte, aes.BlockSize)
+		cipher.Decrypt(dst, block)
+		plaintext = append(plaintext, dst...)
+	}
+
+	return DecryptionResult{plaintext: string(plaintext)}, nil
 }
