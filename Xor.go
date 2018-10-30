@@ -1,13 +1,33 @@
-package set1
+package cryptopals
 
 import (
-	"crypto/aes"
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
 	"strings"
 )
+
+// RepeatingKeyXor sequentially applies each byte of the key to the plaintext and returns the result hex encoded
+func RepeatingKeyXor(plain, key string) (string, error) {
+	res, err := RepeatingKeyXorBytes([]byte(plain), []byte(key))
+	return fmt.Sprintf("%x", res), err
+}
+
+func RepeatingKeyXorBytes(p, key []byte) ([]byte, error) {
+	b, err := FixedXor(p, repeatBytesToLegnth(key, len(p)))
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	return b, nil
+}
+
+func repeatBytesToLegnth(b []byte, l int) []byte {
+	res := [][]byte{bytes.Repeat(b, l/len(b)), b[:l%len(b)]}
+	return bytes.Join(res, nil)
+}
 
 func DecryptRepeatingKeyXorFromBase64(filename string) (DecryptionResult, error) {
 	lines, err := ScanFile(filename)
@@ -188,33 +208,6 @@ func bitsDifferent(b1, b2 byte) int {
 	}
 	return diff
 }
-func Decrypt_AES_ECB_FromBase64File(filename, encryptionKey string) (DecryptionResult, error) {
-	lines, err := ScanFile(filename)
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	return Decrypt_AES_ECB(strings.Join(lines, ""), encryptionKey)
-}
-
-func Decrypt_AES_ECB(ciphertext, encryptionKey string) (DecryptionResult, error) {
-	decoded, err := base64.StdEncoding.DecodeString(ciphertext)
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	cipher, err := aes.NewCipher([]byte(encryptionKey))
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	var plaintext []byte
-	blocks := chunk([]byte(decoded), aes.BlockSize)
-	for _, block := range blocks {
-		dst := make([]byte, aes.BlockSize)
-		cipher.Decrypt(dst, block)
-		plaintext = append(plaintext, dst...)
-	}
-
-	return DecryptionResult{plaintext: string(plaintext)}, nil
-}
 
 func testEq(a, b []byte) bool {
 	// If one is nil, the other must also be nil.
@@ -230,37 +223,4 @@ func testEq(a, b []byte) bool {
 		}
 	}
 	return true
-}
-
-func smellsOfECB(b []byte) bool {
-	blocks := chunk(b, aes.BlockSize)
-	for _, block := range blocks {
-		count := 0
-		for _, b := range blocks {
-			if testEq(b, block) {
-				count++
-			}
-		}
-		if count > 1 {
-			return true
-		}
-	}
-	return false
-}
-
-func DetectAESinECBFromFile(filename string) ([]HexEncoded, error) {
-	lines, err := ScanFile(filename)
-	var ECBs []HexEncoded
-	if err != nil {
-		return nil, err
-	}
-
-	for _, l := range lines {
-		h := HexEncoded{hexString: l}
-		if smellsOfECB(h.getBytes()) {
-			// fmt.Printf("%s seemss like it was encrypted with ECB\n", h)
-			ECBs = append(ECBs, h)
-		}
-	}
-	return ECBs, nil
 }

@@ -1,4 +1,4 @@
-package set1
+package cryptopals
 
 import (
 	"encoding/base64"
@@ -54,4 +54,13 @@ func AssertEqualLen(b1, b2 []byte) error {
 		return errors.New("fixedXorBytes requires byte slices of equal length")
 	}
 	return nil
+}
+
+func PKCSPadString(s string, blocksize int) string {
+	return string(PKCSPadding([]byte(s), blocksize))
+}
+
+func PKCSPadding(b []byte, blocksize int) []byte {
+	add := blocksize % len(b)
+	return append(b, FillByteSlice(add, byte(add))...)
 }

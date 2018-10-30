@@ -1,4 +1,4 @@
-package set1
+package cryptopals
 
 import (
 	"bufio"
@@ -53,11 +53,16 @@ func SolveSingleByteXorCipher(hBytes []byte) (DecryptionResult, error) {
 	return res, nil
 }
 
-func singleByteXor(h []byte, c byte) ([]byte, error) {
-	repeated := make([]byte, len(h))
-	for i := 0; i < len(h); i++ {
+func FillByteSlice(l int, c byte) []byte {
+	repeated := make([]byte, l)
+	for i := 0; i < l; i++ {
 		repeated[i] = c
 	}
+	return repeated
+}
+
+func singleByteXor(h []byte, c byte) ([]byte, error) {
+	repeated := FillByteSlice(len(h), c)
 	return FixedXor(h, repeated)
 }
 
