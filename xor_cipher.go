@@ -2,7 +2,6 @@ package cryptopals
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
@@ -16,7 +15,7 @@ func RepeatingKeyXor(plain, key string) (string, error) {
 }
 
 func RepeatingKeyXorBytes(p, key []byte) ([]byte, error) {
-	b, err := FixedXor(p, repeatBytesToLegnth(key, len(p)))
+	b, err := FixedXor(p, RepeatBytesToLegnth(key, len(p)))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -24,21 +23,9 @@ func RepeatingKeyXorBytes(p, key []byte) ([]byte, error) {
 	return b, nil
 }
 
-func repeatBytesToLegnth(b []byte, l int) []byte {
+func RepeatBytesToLegnth(b []byte, l int) []byte {
 	res := [][]byte{bytes.Repeat(b, l/len(b)), b[:l%len(b)]}
 	return bytes.Join(res, nil)
-}
-
-func DecryptRepeatingKeyXorFromBase64(filename string) (DecryptionResult, error) {
-	lines, err := ScanFile(filename)
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	decoded, err := base64.StdEncoding.DecodeString(strings.Join(lines, ""))
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	return DecryptRepeatingKeyXorHex(HexEncoded{hexString: fmt.Sprintf("%0x", decoded)})
 }
 
 func chunk(b []byte, chunkSize int) [][]byte {
@@ -53,11 +40,7 @@ func chunk(b []byte, chunkSize int) [][]byte {
 	return chunks
 }
 
-func DecryptRepeatingKeyXorHex(hexCipher HexEncoded) (DecryptionResult, error) {
-	return decryptRepeatingKeyXor(hexCipher.getBytes())
-}
-
-func decryptRepeatingKeyXor(b []byte) (DecryptionResult, error) {
+func DecryptRepeatingKeyXor(b []byte) (DecryptionResult, error) {
 	keysizes, err := guessKeysize(b)
 	if err != nil {
 		return DecryptionResult{}, err
@@ -100,13 +83,13 @@ func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (DecryptionResult,
 		}
 		key[i] = string(s.key)
 	}
-	decryptionKey := strings.Join(key, "")
-	hplain, err := RepeatingKeyXorBytes(b, []byte(decryptionKey))
+	decryptionKey := []byte(strings.Join(key, ""))
+	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)
 	if err != nil {
 		return DecryptionResult{}, err
 	}
 	// fmt.Printf("Best guess for key of length %d is %s\n", keysize, decryptionKey)
-	return DecryptionResult{key: decryptionKey, plaintext: string(hplain)}, nil
+	return DecryptionResult{key: decryptionKey, plaintext: hplain}, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {

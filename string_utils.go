@@ -1,11 +1,15 @@
 package cryptopals
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 )
 
 type HexEncoded struct {
@@ -48,10 +52,36 @@ func FixedXor(b1, b2 []byte) ([]byte, error) {
 	return b, nil
 }
 
+func Min(x, y int) int {
+	if x > y {
+		return y
+	}
+	return x
+}
+
+func Max(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
+}
+
+func FlexibleXor(b1, b2 []byte) []byte {
+	diff := len(b1) - len(b2)
+	if diff > 0 {
+		zeros := bytes.Repeat([]byte{0}, diff)
+		x, _ := FixedXor(b1, append(b2, zeros...))
+		return x
+	}
+	zeros := bytes.Repeat([]byte{0}, -diff)
+	x, _ := FixedXor(append(b1, zeros...), b2)
+	return x
+}
+
 // AssertEqualLen returns an error if two byte slices are of different length
 func AssertEqualLen(b1, b2 []byte) error {
 	if len(b1) != len(b2) {
-		return errors.New("fixedXorBytes requires byte slices of equal length")
+		return fmt.Errorf("Requires byte slices of equal length, got %d and %d", len(b1), len(b2))
 	}
 	return nil
 }
@@ -63,4 +93,39 @@ func PKCSPadString(s string, blocksize int) string {
 func PKCSPadding(b []byte, blocksize int) []byte {
 	add := blocksize % len(b)
 	return append(b, FillByteSlice(add, byte(add))...)
+}
+
+func ScanFile(filename string) ([]string, error) {
+	var lines []string
+	f, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return lines, fmt.Errorf("open file error: %v", err)
+	}
+	defer f.Close()
+
+	sc := bufio.NewScanner(f)
+
+	for sc.Scan() {
+		lines = append(lines, sc.Text())
+	}
+	if err := sc.Err(); err != nil {
+		return lines, fmt.Errorf("scan file error: %v", err)
+	}
+	return lines, nil
+}
+
+func ReadBase64File(filename string) ([]byte, error) {
+	lines, err := ScanFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	decoded, err := ParseBase64(strings.Join(lines, ""))
+	if err != nil {
+		return nil, err
+	}
+	return decoded, nil
+}
+
+func ParseBase64(l string) ([]byte, error) {
+	return base64.StdEncoding.DecodeString(l)
 }

@@ -1,21 +1,23 @@
 package cryptopals
 
 import (
-	"bufio"
-	"fmt"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 )
 
+type EncryptionResult struct {
+	key        []byte
+	ciphertext []byte
+}
+
 type DecryptionResult struct {
-	key       string
-	plaintext string
+	key       []byte
+	plaintext []byte
 }
 
 func (d DecryptionResult) score() float64 {
-	if d.plaintext == "" {
+	if d.plaintext == nil {
 		// return a high score for uninitialized DecryptionResult
 		return float64(1e10)
 	}
@@ -23,7 +25,7 @@ func (d DecryptionResult) score() float64 {
 }
 
 func (d DecryptionResult) minimize() float64 {
-	if d.plaintext == "" {
+	if d.plaintext == nil {
 		// return a high score for uninitialized DecryptionResult
 		return float64(1e10)
 	}
@@ -44,7 +46,7 @@ func SolveSingleByteXorCipher(hBytes []byte) (DecryptionResult, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := DecryptionResult{plaintext: string(t), key: string(i)}
+		tprime := DecryptionResult{plaintext: t, key: []byte{i}}
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime
@@ -121,12 +123,8 @@ func getScore(text []byte) float64 {
 	return score
 }
 
-func DetectSingleByteXorCipher(filename string) (DecryptionResult, error) {
-	lines, err := ScanFile(filename)
+func DetectSingleByteXorCipher(lines []string) (DecryptionResult, error) {
 	var res DecryptionResult
-	if err != nil {
-		return res, err
-	}
 	for _, h := range lines {
 		s, err := SolveSingleByteXorCipherHex(HexEncoded{hexString: h})
 		if err != nil {
@@ -137,23 +135,4 @@ func DetectSingleByteXorCipher(filename string) (DecryptionResult, error) {
 		}
 	}
 	return res, nil
-}
-
-func ScanFile(filename string) ([]string, error) {
-	var lines []string
-	f, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
-	if err != nil {
-		return lines, fmt.Errorf("open file error: %v", err)
-	}
-	defer f.Close()
-
-	sc := bufio.NewScanner(f)
-
-	for sc.Scan() {
-		lines = append(lines, sc.Text())
-	}
-	if err := sc.Err(); err != nil {
-		return lines, fmt.Errorf("scan file error: %v", err)
-	}
-	return lines, nil
 }
