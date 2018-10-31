@@ -2,35 +2,37 @@ package cryptopals
 
 import (
 	"crypto/aes"
-	"encoding/base64"
-	"strings"
+	"log"
 )
 
-func Decrypt_AES_ECB_FromBase64File(filename, encryptionKey string) (DecryptionResult, error) {
-	lines, err := ScanFile(filename)
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	return Decrypt_AES_ECB(strings.Join(lines, ""), encryptionKey)
-}
-
-func Decrypt_AES_ECB(ciphertext, encryptionKey string) (DecryptionResult, error) {
-	decoded, err := base64.StdEncoding.DecodeString(ciphertext)
-	if err != nil {
-		return DecryptionResult{}, err
-	}
-	cipher, err := aes.NewCipher([]byte(encryptionKey))
+func DecryptAESECB(e EncryptionResult) (DecryptionResult, error) {
+	cipher, err := aes.NewCipher(e.key)
 	if err != nil {
 		return DecryptionResult{}, err
 	}
 	var plaintext []byte
-	blocks := chunk([]byte(decoded), aes.BlockSize)
+	blocks := chunk(e.ciphertext, aes.BlockSize)
 	for _, block := range blocks {
 		dst := make([]byte, aes.BlockSize)
 		cipher.Decrypt(dst, block)
 		plaintext = append(plaintext, dst...)
 	}
-	return DecryptionResult{plaintext: string(plaintext)}, nil
+	return DecryptionResult{plaintext: plaintext}, nil
+}
+
+func EncryptAESECB(d DecryptionResult) (EncryptionResult, error) {
+	cipher, err := aes.NewCipher(d.key)
+	if err != nil {
+		return EncryptionResult{}, err
+	}
+	var ciphertext []byte
+	blocks := chunk(d.plaintext, aes.BlockSize)
+	for _, block := range blocks {
+		dst := make([]byte, aes.BlockSize)
+		cipher.Encrypt(dst, block)
+		ciphertext = append(ciphertext, dst...)
+	}
+	return EncryptionResult{ciphertext: ciphertext}, nil
 }
 
 func smellsOfECB(b []byte) bool {
@@ -49,19 +51,48 @@ func smellsOfECB(b []byte) bool {
 	return false
 }
 
-func DetectAESinECBFromFile(filename string) ([]HexEncoded, error) {
-	lines, err := ScanFile(filename)
+func DetectAESinECB(lines []string) ([]HexEncoded, error) {
 	var ECBs []HexEncoded
-	if err != nil {
-		return nil, err
-	}
-
 	for _, l := range lines {
 		h := HexEncoded{hexString: l}
 		if smellsOfECB(h.getBytes()) {
-			// fmt.Printf("%s seemss like it was encrypted with ECB\n", h)
 			ECBs = append(ECBs, h)
 		}
 	}
 	return ECBs, nil
+}
+
+func EncryptCBCMode(d DecryptionResult, iv []byte) (EncryptionResult, error) {
+	e := EncryptionResult{key: d.key}
+	blocks := chunk(d.plaintext, aes.BlockSize)
+	cipher := EncryptionResult{ciphertext: iv}
+	for _, block := range blocks {
+		cipher, err := EncryptAESECB(DecryptionResult{key: d.key, plaintext: FlexibleXor(block, cipher.ciphertext)})
+		if err != nil {
+			log.Fatal(err)
+			return e, err
+		}
+		e.ciphertext = append(e.ciphertext, cipher.ciphertext...)
+
+	}
+	return e, nil
+}
+
+func DecryptCBCMode(e EncryptionResult, iv []byte) (DecryptionResult, error) {
+	d := DecryptionResult{key: e.key}
+	blocks := chunk(e.ciphertext, aes.BlockSize)
+	priorCiphertext := iv
+	for _, block := range blocks {
+		res, err := DecryptAESECB(EncryptionResult{key: e.key, ciphertext: block})
+		if err != nil {
+			return d, err
+		}
+		plain, err := FixedXor(res.plaintext, priorCiphertext)
+		if err != nil {
+			return d, err
+		}
+		d.plaintext = append(d.plaintext, plain...)
+		priorCiphertext = block
+	}
+	return d, nil
 }
