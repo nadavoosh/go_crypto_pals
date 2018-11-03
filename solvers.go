@@ -6,47 +6,47 @@ import (
 	"strings"
 )
 
-type EncryptionResult struct {
+type EncryptedText struct {
 	key        []byte
 	ciphertext []byte
 }
 
-type DecryptionResult struct {
+type PlainText struct {
 	key       []byte
 	plaintext []byte
 }
 
-func (d DecryptionResult) score() float64 {
+func (d PlainText) score() float64 {
 	if d.plaintext == nil {
-		// return a high score for uninitialized DecryptionResult
+		// return a high score for uninitialized PlainText
 		return float64(1e10)
 	}
 	return getScore([]byte(d.plaintext))
 }
 
-func (d DecryptionResult) minimize() float64 {
+func (d PlainText) minimize() float64 {
 	if d.plaintext == nil {
-		// return a high score for uninitialized DecryptionResult
+		// return a high score for uninitialized PlainText
 		return float64(1e10)
 	}
 	return getScore([]byte(d.plaintext))
 }
 
 // SolveSingleByteXorCipherHex examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
-func SolveSingleByteXorCipherHex(h HexEncoded) (DecryptionResult, error) {
+func SolveSingleByteXorCipherHex(h HexEncoded) (PlainText, error) {
 	return SolveSingleByteXorCipher(h.getBytes())
 }
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and key, based on english character frequency
-func SolveSingleByteXorCipher(hBytes []byte) (DecryptionResult, error) {
-	var res DecryptionResult
+func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
+	var res PlainText
 	var newScore float64
 	for i := byte(0); i < 255; i++ {
 		t, err := singleByteXor(hBytes, i)
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := DecryptionResult{plaintext: t, key: []byte{i}}
+		tprime := PlainText{plaintext: t, key: []byte{i}}
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime
@@ -123,8 +123,8 @@ func getScore(text []byte) float64 {
 	return score
 }
 
-func DetectSingleByteXorCipher(lines []string) (DecryptionResult, error) {
-	var res DecryptionResult
+func DetectSingleByteXorCipher(lines []string) (PlainText, error) {
+	var res PlainText
 	for _, h := range lines {
 		s, err := SolveSingleByteXorCipherHex(HexEncoded{hexString: h})
 		if err != nil {
