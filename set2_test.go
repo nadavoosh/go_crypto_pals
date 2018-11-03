@@ -70,11 +70,16 @@ func TestEncryptCBC(t *testing.T) {
 
 func TestEncryptionOracle(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
-	plaintext, err := EncryptionOracle([]byte(FunkyMusic))
+	mode := ECB
+	if rand.Float64() < float64(0.5) {
+		mode = CBC
+	}
+	plaintext, err := EncryptionOracle([]byte(FunkyMusic), mode)
 	if err != nil {
 		t.Errorf("EncryptionOracle(%q) threw an error: %s", FunkyMusic, err)
 	}
-	if GuessAESMode(plaintext) == "ECB Mode" {
-		t.Errorf("GuessAESMode returned ECB Mode")
+	guessed := GuessAESMode(plaintext)
+	if guessed != mode {
+		t.Errorf("GuessAESMode returned incorrect mode: got %d, want %d", guessed, mode)
 	}
 }

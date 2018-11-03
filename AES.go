@@ -136,8 +136,8 @@ func addRandomBytes(p []byte) ([]byte, error) {
 	return append(append(beforeBytes, p...), afterBytes...), nil
 }
 
-func EncryptionOracle(p []byte) (EncryptedText, error) {
-	b, err := addRandomBytes(p)
+func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
+	b, err := addRandomBytes(plain)
 	if err != nil {
 		return EncryptedText{}, err
 	}
@@ -146,26 +146,34 @@ func EncryptionOracle(p []byte) (EncryptedText, error) {
 		return EncryptedText{}, err
 	}
 	d := PlainText{plaintext: PKCSPadding(b, aes.BlockSize), key: key}
-	shouldUseECB := mathRand.Float64() < float64(0.5)
-	if shouldUseECB {
+	switch mode {
+	case ECB:
 		fmt.Printf("Encrypting with ECB Mode\n")
 		return EncryptAESECBMode(d)
+	case CBC:
+		fmt.Printf("Encrypting with CBC Mode\n")
+		iv, err := generateRandomBlock()
+		if err != nil {
+			return EncryptedText{}, err
+		}
+		return EncryptCBCMode(d, iv)
+	default:
+		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
 	}
-	fmt.Printf("Encrypting with CBC Mode\n")
-	iv, err := generateRandomBlock()
-	if err != nil {
-		return EncryptedText{}, err
-	}
-
-	return EncryptCBCMode(d, iv)
-
 }
 
-func GuessAESMode(e EncryptedText) string {
+type AESMode int
+
+const (
+	ECB AESMode = 0
+	CBC AESMode = 1
+)
+
+func GuessAESMode(e EncryptedText) AESMode {
 	if smellsOfECB(e.ciphertext) {
 		fmt.Printf("Guessing ECB\n")
-		return "ECB Mode"
+		return ECB
 	}
 	fmt.Printf("Guessing CBC\n")
-	return "CBC Mode"
+	return CBC
 }
