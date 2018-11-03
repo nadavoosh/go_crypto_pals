@@ -17,9 +17,7 @@ func DecryptAESECBMode(e EncryptedText) (PlainText, error) {
 	var plaintext []byte
 	blocks := chunk(e.ciphertext, aes.BlockSize)
 	for _, block := range blocks {
-		dst := make([]byte, aes.BlockSize)
-		cipher.Decrypt(dst, block)
-		plaintext = append(plaintext, dst...)
+		plaintext = append(plaintext, decryptSingleBlock(cipher, block)...)
 	}
 	return PlainText{plaintext: plaintext}, nil
 }
@@ -27,6 +25,12 @@ func DecryptAESECBMode(e EncryptedText) (PlainText, error) {
 func encryptSingleBlock(cipher cipher.Block, plaintext []byte) []byte {
 	dst := make([]byte, aes.BlockSize)
 	cipher.Encrypt(dst, plaintext)
+	return dst
+}
+
+func decryptSingleBlock(cipher cipher.Block, ciphertext []byte) []byte {
+	dst := make([]byte, aes.BlockSize)
+	cipher.Decrypt(dst, ciphertext)
 	return dst
 }
 
@@ -38,7 +42,6 @@ func EncryptAESECBMode(d PlainText) (EncryptedText, error) {
 	var ciphertext []byte
 	blocks := chunk(d.plaintext, aes.BlockSize)
 	for _, block := range blocks {
-		// fmt.Printf("block len %d from %d total\n", len(block), len(d.plaintext))
 		ciphertext = append(ciphertext, encryptSingleBlock(cipher, block)...)
 	}
 	return EncryptedText{ciphertext: ciphertext}, nil
@@ -93,12 +96,15 @@ func DecryptCBCMode(e EncryptedText, iv []byte) (PlainText, error) {
 	d := PlainText{key: e.key}
 	blocks := chunk(e.ciphertext, aes.BlockSize)
 	priorCiphertext := iv
+	c, err := aes.NewCipher(e.key)
+	if err != nil {
+		return PlainText{}, err
+	}
 	for _, block := range blocks {
-		res, err := DecryptAESECBMode(EncryptedText{key: e.key, ciphertext: block})
 		if err != nil {
 			return d, err
 		}
-		plain, err := FixedXor(res.plaintext, priorCiphertext)
+		plain, err := FixedXor(decryptSingleBlock(c, block), priorCiphertext)
 		if err != nil {
 			return d, err
 		}
