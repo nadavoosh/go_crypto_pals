@@ -91,7 +91,13 @@ func PKCSPadString(s string, blocksize int) string {
 }
 
 func PKCSPadding(b []byte, blocksize int) []byte {
-	add := blocksize % len(b)
+	var add int
+	excess := len(b) % blocksize
+	if excess == 0 {
+		add = blocksize
+	} else {
+		add = blocksize % excess
+	}
 	return append(b, FillByteSlice(add, byte(add))...)
 }
 

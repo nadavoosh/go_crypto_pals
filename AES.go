@@ -2,9 +2,10 @@ package cryptopals
 
 import (
 	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
-	"log"
+	// "log"
 	mathRand "math/rand"
 )
 
@@ -23,6 +24,12 @@ func DecryptAESECBMode(e EncryptedText) (PlainText, error) {
 	return PlainText{plaintext: plaintext}, nil
 }
 
+func encryptSingleBlock(cipher cipher.Block, plaintext []byte) []byte {
+	dst := make([]byte, aes.BlockSize)
+	cipher.Encrypt(dst, plaintext)
+	return dst
+}
+
 func EncryptAESECBMode(d PlainText) (EncryptedText, error) {
 	cipher, err := aes.NewCipher(d.key)
 	if err != nil {
@@ -31,25 +38,24 @@ func EncryptAESECBMode(d PlainText) (EncryptedText, error) {
 	var ciphertext []byte
 	blocks := chunk(d.plaintext, aes.BlockSize)
 	for _, block := range blocks {
-		dst := make([]byte, aes.BlockSize)
-		cipher.Encrypt(dst, block)
-		ciphertext = append(ciphertext, dst...)
+		// fmt.Printf("block len %d from %d total\n", len(block), len(d.plaintext))
+		ciphertext = append(ciphertext, encryptSingleBlock(cipher, block)...)
 	}
 	return EncryptedText{ciphertext: ciphertext}, nil
 }
 
 func smellsOfECB(b []byte) bool {
 	blocks := chunk(b, aes.BlockSize)
+	m := make(map[string]int64)
 	for _, block := range blocks {
-		countRepeated := 0
 		for _, b := range blocks {
 			if testEq(b, block) {
-				countRepeated++
-				continue
+				m[string(block)]++
 			}
 		}
-		// fmt.Printf("countRepeated is %d\n", countRepeated)
-		if countRepeated > 2 {
+	}
+	for _, v := range m {
+		if v > 2 {
 			return true
 		}
 	}
@@ -70,14 +76,14 @@ func DetectAESECBMode(lines []string) ([]HexEncoded, error) {
 func EncryptCBCMode(d PlainText, iv []byte) (EncryptedText, error) {
 	e := EncryptedText{key: d.key}
 	blocks := chunk(d.plaintext, aes.BlockSize)
-	cipher := EncryptedText{ciphertext: iv}
+	cipher := iv
+	c, err := aes.NewCipher(d.key)
+	if err != nil {
+		return EncryptedText{}, err
+	}
 	for _, block := range blocks {
-		cipher, err := EncryptAESECBMode(PlainText{key: d.key, plaintext: FlexibleXor(block, cipher.ciphertext)})
-		if err != nil {
-			log.Fatal(err)
-			return e, err
-		}
-		e.ciphertext = append(e.ciphertext, cipher.ciphertext...)
+		cipher = encryptSingleBlock(c, FlexibleXor(block, cipher))
+		e.ciphertext = append(e.ciphertext, cipher...)
 
 	}
 	return e, nil
@@ -134,22 +140,26 @@ func EncryptionOracle(p []byte) (EncryptedText, error) {
 		return EncryptedText{}, err
 	}
 	d := PlainText{plaintext: PKCSPadding(b, aes.BlockSize), key: key}
-	if mathRand.Intn(2) == 0 {
+	shouldUseECB := mathRand.Float64() < float64(0.5)
+	if shouldUseECB {
 		fmt.Printf("Encrypting with ECB Mode\n")
 		return EncryptAESECBMode(d)
 	}
+	fmt.Printf("Encrypting with CBC Mode\n")
 	iv, err := generateRandomBlock()
 	if err != nil {
 		return EncryptedText{}, err
 	}
-	fmt.Printf("Encrypting with CBC Mode\n")
+
 	return EncryptCBCMode(d, iv)
 
 }
 
 func GuessAESMode(e EncryptedText) string {
 	if smellsOfECB(e.ciphertext) {
+		fmt.Printf("Guessing ECB\n")
 		return "ECB Mode"
 	}
+	fmt.Printf("Guessing CBC\n")
 	return "CBC Mode"
 }

@@ -54,7 +54,7 @@ func TestDetectSingleByteXorCipher(t *testing.T) {
 	}
 	got, err := DetectSingleByteXorCipher(lines)
 	if err != nil {
-		t.Errorf("DetectSingleByteXorCipher(%q) threw an error", lines)
+		t.Errorf("DetectSingleByteXorCipher(%q) threw an error", filename)
 	}
 	if string(got.plaintext) != want {
 		t.Errorf("DetectSingleByteXorCipher(%q) == %q, want %q", lines, got.plaintext, want)
@@ -136,6 +136,9 @@ func TestDetectAESECBModeFromFile(t *testing.T) {
 	}
 	if len(got) == 0 {
 		t.Errorf("DetectAESECBMode(%q) returned 0 results, want 1", filename)
+	} else if len(got) > 1 {
+		t.Errorf("DetectAESECBMode(%q) returned %d results, want 1", filename, len(got))
+
 	} else {
 		if got[0].hexString != want {
 			t.Errorf("DetectAESECBMode(%q) == %q, want %q", filename, got, want)

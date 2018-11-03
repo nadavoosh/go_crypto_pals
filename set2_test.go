@@ -2,7 +2,9 @@ package cryptopals
 
 import (
 	"crypto/aes"
+	"math/rand"
 	"testing"
+	"time"
 )
 
 func TestPKCS7Padding(t *testing.T) {
@@ -67,6 +69,7 @@ func TestEncryptCBC(t *testing.T) {
 }
 
 func TestEncryptionOracle(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
 	plaintext, err := EncryptionOracle([]byte(FunkyMusic))
 	if err != nil {
 		t.Errorf("EncryptionOracle(%q) threw an error: %s", FunkyMusic, err)
