@@ -9,6 +9,7 @@ import (
 type EncryptedText struct {
 	key        []byte
 	ciphertext []byte
+	padding    Padding
 }
 
 type PlainText struct {
