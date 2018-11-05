@@ -225,53 +225,59 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 	return 0, nil
 }
 
-func ByteByByteECBDecryption(c []byte) (string, error) {
+var byteA = []byte("A")
+
+func decryptBlock(block []byte, blocksize int) ([]byte, error) {
+	f := GetEncryptionFunction(block)
+	var nPlain []byte
+	for j := 0; j < len(block); j++ {
+		baseInput := bytes.Repeat(byteA, blocksize-(j+1))
+		m := make(map[string]byte)
+		for i := byte(0); i < 255; i++ {
+			testInput := append(baseInput, nPlain...)
+			b := append(testInput, i)
+			p, err := f(b)
+			if err != nil {
+				return nil, err
+			}
+			ret := p.ciphertext[0:blocksize]
+			m[string(ret)] = i
+		}
+		p, err := f(baseInput)
+		if err != nil {
+			return nil, err
+		}
+		actual := p.ciphertext[0:blocksize]
+		deciphered, ok := m[string(actual)]
+		if ok == false {
+			return nil, fmt.Errorf("encrypted string %d not found in decryption map for byte %d", actual, j)
+		}
+		nPlain = append(nPlain, deciphered)
+	}
+	return nPlain, nil
+}
+
+func ByteByByteECBDecryption(c []byte) ([]byte, error) {
 	f := GetEncryptionFunction(c)
 	blocksize, err := inferBlocksize(f)
-	// fmt.Printf("blocksize is %d\n", blocksize)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	basePadding := blocksize - (len(c) % blocksize)
 	paddingLen := basePadding + 2*blocksize
-	ciphertext := append(c, bytes.Repeat([]byte("A"), paddingLen)...)
+	ciphertext := append(c, bytes.Repeat(byteA, paddingLen)...)
 	if !smellsOfECB(ciphertext) {
-		return "", fmt.Errorf("ECB Mode not detected in ciphertext")
+		return nil, fmt.Errorf("ECB Mode not detected in ciphertext")
 	}
 	var plaintext []byte
-	A := []byte("A")
+
 	cipherBlocks := chunk(c, blocksize)
 	for _, block := range cipherBlocks {
-		f = GetEncryptionFunction(block)
-		// fmt.Printf("Decrypting block %d of ciphertext, with len %d\n", n, len(block))
-		var nPlain []byte
-		for j := 0; j < len(block); j++ {
-			baseInput := bytes.Repeat(A, blocksize-(j+1))
-			// fmt.Printf("baseInput has len %d: %s\n", len(baseInput), baseInput)
-			m := make(map[string]byte)
-			for i := byte(0); i < 255; i++ {
-				testInput := append(baseInput, nPlain...)
-				b := append(testInput, i)
-				// fmt.Printf("b is %s\n", b)
-				p, err := f(b)
-				if err != nil {
-					return "", err
-				}
-				ret := p.ciphertext[0:blocksize]
-				m[string(ret)] = i
-			}
-			p, err := f(baseInput)
-			if err != nil {
-				return "", err
-			}
-			actual := p.ciphertext[0:blocksize]
-			deciphered, ok := m[string(actual)]
-			if ok == false {
-				return "", fmt.Errorf("encrypted string %d not found in decryption map for byte %d", actual, j)
-			}
-			nPlain = append(nPlain, deciphered)
+		d, err := decryptBlock(block, blocksize)
+		if err != nil {
+			return nil, err
 		}
-		plaintext = append(plaintext, nPlain...)
+		plaintext = append(plaintext, d...)
 	}
-	return string(plaintext), nil
+	return plaintext, nil
 }

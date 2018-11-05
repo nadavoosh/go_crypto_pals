@@ -104,7 +104,7 @@ func TestEncryptUnknownKeyWithPrepend(t *testing.T) {
 		t.Errorf("ByteByByteECBDecryption(%q) threw an error: %s", FunkyMusic, err)
 	}
 	want := "Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n"
-	if plaintext != want {
+	if string(plaintext) != want {
 		t.Errorf("ByteByByteECBDecryption returned incorrect plaintext: got %s, want %s", plaintext, want)
 	}
 }
