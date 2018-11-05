@@ -92,19 +92,20 @@ func TestEncryptionOracle(t *testing.T) {
 		t.Errorf("GuessAESMode returned incorrect mode: got %d, want %d", guessed, mode)
 	}
 }
-
-func TestEncryptUnknownKeyWithPrepend(t *testing.T) {
+func TestDecryptOracle(t *testing.T) {
 	prepend := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
 	parsed, err := ParseBase64(prepend)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", prepend, err)
 	}
-	plaintext, err := ByteByByteECBDecryption(parsed)
+
+	f := GetEncryptionFunction(parsed)
+	plaintext, err := DecryptOracle(f)
 	if err != nil {
-		t.Errorf("ByteByByteECBDecryption(%q) threw an error: %s", FunkyMusic, err)
+		t.Errorf("DecryptOracle(f) threw an error: %s", err)
 	}
 	want := "Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n"
 	if string(plaintext) != want {
-		t.Errorf("ByteByByteECBDecryption returned incorrect plaintext: got %s, want %s", plaintext, want)
+		t.Errorf("DecryptOracle(f) returned incorrect plaintext: got:\n %q \n want \n %q", plaintext, want)
 	}
 }

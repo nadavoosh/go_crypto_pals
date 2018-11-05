@@ -227,57 +227,58 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 
 var byteA = []byte("A")
 
-func decryptBlock(block []byte, blocksize int) ([]byte, error) {
-	f := GetEncryptionFunction(block)
-	var nPlain []byte
-	for j := 0; j < len(block); j++ {
-		baseInput := bytes.Repeat(byteA, blocksize-(j+1))
-		m := make(map[string]byte)
-		for i := byte(0); i < 255; i++ {
-			testInput := append(baseInput, nPlain...)
-			b := append(testInput, i)
-			p, err := f(b)
-			if err != nil {
-				return nil, err
-			}
-			ret := p.ciphertext[0:blocksize]
-			m[string(ret)] = i
-		}
-		p, err := f(baseInput)
+func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
+	m := make(map[string]byte)
+	for i := byte(0); i < 255; i++ {
+		b := append(testInput, i)
+		p, err := f(b)
 		if err != nil {
 			return nil, err
 		}
-		actual := p.ciphertext[0:blocksize]
-		deciphered, ok := m[string(actual)]
-		if ok == false {
-			return nil, fmt.Errorf("encrypted string %d not found in decryption map for byte %d", actual, j)
-		}
-		nPlain = append(nPlain, deciphered)
+		ret := p.ciphertext[(blockNumber * blocksize) : (blockNumber+1)*blocksize]
+		m[string(ret)] = i
 	}
-	return nPlain, nil
+	return m, nil
 }
 
-func ByteByByteECBDecryption(c []byte) ([]byte, error) {
-	f := GetEncryptionFunction(c)
+func DecryptOracle(f EncryptionFn) ([]byte, error) {
 	blocksize, err := inferBlocksize(f)
 	if err != nil {
 		return nil, err
 	}
-	basePadding := blocksize - (len(c) % blocksize)
-	paddingLen := basePadding + 2*blocksize
-	ciphertext := append(c, bytes.Repeat(byteA, paddingLen)...)
-	if !smellsOfECB(ciphertext) {
+	ci, err := f(bytes.Repeat(byteA, 2*blocksize))
+	if err != nil {
+		return nil, err
+	}
+	if !smellsOfECB(ci.ciphertext) {
 		return nil, fmt.Errorf("ECB Mode not detected in ciphertext")
 	}
-	var plaintext []byte
-
-	cipherBlocks := chunk(c, blocksize)
-	for _, block := range cipherBlocks {
-		d, err := decryptBlock(block, blocksize)
-		if err != nil {
-			return nil, err
-		}
-		plaintext = append(plaintext, d...)
+	encryptedText, err := f(nil)
+	if err != nil {
+		return nil, err
 	}
-	return plaintext, nil
+	var nPlain []byte
+	for n := 0; n < len(encryptedText.ciphertext)/blocksize; n++ {
+		for j := 0; j < blocksize; j++ {
+			baseInput := bytes.Repeat(byteA, blocksize-(j+1))
+
+			testInput := append(baseInput, nPlain...)
+
+			m, err := buildMap(f, testInput, blocksize, n)
+			if err != nil {
+				return nil, err
+			}
+			p, err := f(baseInput)
+			if err != nil {
+				return nil, err
+			}
+			actual := p.ciphertext[(n * blocksize) : (n+1)*blocksize]
+			if deciphered, ok := m[string(actual)]; ok {
+				nPlain = append(nPlain, deciphered)
+			} else {
+				fmt.Printf("encrypted string %d not found in decryption map for byte %d\n", actual, j)
+			}
+		}
+	}
+	return RemovePKCSPadding(nPlain), nil
 }
