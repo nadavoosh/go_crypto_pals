@@ -24,6 +24,42 @@ const (
 	PKCS Padding = 1
 )
 
+func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
+	switch mode {
+	case ECB:
+		return EncryptECB(d)
+	case CBC:
+		if d.iv == nil {
+			iv, err := generateRandomBlock()
+			if err != nil {
+				return EncryptedText{}, err
+			}
+			d.iv = iv
+		}
+		return encryptCBC(d)
+	default:
+		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
+	}
+}
+
+func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
+	switch mode {
+	case ECB:
+		return DecryptECB(e)
+	case CBC:
+		if e.iv == nil {
+			iv, err := generateRandomBlock()
+			if err != nil {
+				return PlainText{}, err
+			}
+			e.iv = iv
+		}
+		return decryptCBC(e)
+	default:
+		return PlainText{}, fmt.Errorf("Mode %d unknown", mode)
+	}
+}
+
 func DecryptECB(e EncryptedText) (PlainText, error) {
 	cipher, err := aes.NewCipher(e.key)
 	if err != nil {
@@ -101,10 +137,10 @@ func DetectECBMode(lines []string) ([]HexEncoded, error) {
 	return ECBs, nil
 }
 
-func EncryptCBC(d PlainText, iv []byte) (EncryptedText, error) {
+func encryptCBC(d PlainText) (EncryptedText, error) {
 	e := EncryptedText{key: d.key}
 	blocks := chunk(d.plaintext, aes.BlockSize)
-	cipher := iv
+	cipher := d.iv
 	c, err := aes.NewCipher(d.key)
 	if err != nil {
 		return EncryptedText{}, err
@@ -117,10 +153,10 @@ func EncryptCBC(d PlainText, iv []byte) (EncryptedText, error) {
 	return e, nil
 }
 
-func DecryptCBC(e EncryptedText, iv []byte) (PlainText, error) {
+func decryptCBC(e EncryptedText) (PlainText, error) {
 	d := PlainText{key: e.key}
 	blocks := chunk(e.ciphertext, aes.BlockSize)
-	priorCiphertext := iv
+	priorCiphertext := e.iv
 	c, err := aes.NewCipher(e.key)
 	if err != nil {
 		return PlainText{}, err
@@ -174,14 +210,10 @@ func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
 	switch mode {
 	case ECB:
 		fmt.Printf("Encrypting with ECB Mode\n")
-		return EncryptECB(d)
+		return Encrypt(ECB, d)
 	case CBC:
 		fmt.Printf("Encrypting with CBC Mode\n")
-		iv, err := generateRandomBlock()
-		if err != nil {
-			return EncryptedText{}, err
-		}
-		return EncryptCBC(d, iv)
+		return Encrypt(CBC, d)
 	default:
 		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
 	}

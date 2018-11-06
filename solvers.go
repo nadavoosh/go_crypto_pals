@@ -10,11 +10,13 @@ type EncryptedText struct {
 	key        []byte
 	ciphertext []byte
 	padding    Padding
+	iv         []byte
 }
 
 type PlainText struct {
 	key       []byte
 	plaintext []byte
+	iv        []byte
 }
 
 func (d PlainText) score() float64 {

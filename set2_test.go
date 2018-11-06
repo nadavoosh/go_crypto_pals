@@ -27,11 +27,11 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := EncryptECB(PlainText{plaintext: []byte(FunkyMusic), key: key})
+	c, err := Encrypt(ECB, PlainText{plaintext: []byte(FunkyMusic), key: key})
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", FunkyMusic, err)
 	}
-	got, err := DecryptECB(c)
+	got, err := Decrypt(ECB, c)
 	if err != nil {
 		t.Errorf("DecryptECB(%q) threw an error: %s", FunkyMusic, err)
 	}
@@ -45,35 +45,34 @@ func TestEncryptAESCBC(t *testing.T) {
 	in := "NADAVRECCAAAA"
 	iv := RepeatBytesToLegnth([]byte{0}, aes.BlockSize)
 	want := string(FlexibleXor([]byte(in), iv))
-	c, err := EncryptCBC(PlainText{plaintext: []byte(in), key: key}, iv)
+	c, err := Encrypt(CBC, PlainText{plaintext: []byte(in), key: key, iv: iv})
 	if err != nil {
-		t.Errorf("EncryptCBC(%q) threw an error: %s", in, err)
+		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	in2 := EncryptedText{ciphertext: []byte(c.ciphertext), key: key}
-	got, err := DecryptCBC(in2, iv)
+	in2 := EncryptedText{ciphertext: []byte(c.ciphertext), key: key, iv: iv}
+	got, err := Decrypt(CBC, in2)
 	if err != nil {
-		t.Errorf("DecryptCBC(%q) threw an error: %s", in2, err)
+		t.Errorf("decryptCBC(%q) threw an error: %s", in2, err)
 	}
 	if string(got.plaintext) != want {
-		t.Errorf("DecryptCBC(%q) == %q, want %q", in, string(got.plaintext), want)
+		t.Errorf("decryptCBC(%q) == %q, want %q", in, string(got.plaintext), want)
 	}
 }
 
-func TestEncryptCBC(t *testing.T) {
+func TestencryptCBC(t *testing.T) {
 	filename := "challenges/challenge10.txt"
 	decoded, err := ReadBase64File(filename)
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
 	key := []byte("YELLOW SUBMARINE")
-	in := EncryptedText{key: key, ciphertext: decoded}
-	iv := RepeatBytesToLegnth([]byte{0}, aes.BlockSize)
-	got, err := DecryptCBC(in, iv)
+	in := EncryptedText{key: key, ciphertext: decoded, iv: RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
+	got, err := decryptCBC(in)
 	if err != nil {
-		t.Errorf("DecryptCBC(%q) threw an error: %s", in, err)
+		t.Errorf("decryptCBC(%q) threw an error: %s", in, err)
 	}
 	if string(got.plaintext) != FunkyMusic {
-		t.Errorf("EncryptCBC(%q) == %q, want %q", in, got, FunkyMusic)
+		t.Errorf("encryptCBC(%q) == %q, want %q", in, got, FunkyMusic)
 	}
 }
 
