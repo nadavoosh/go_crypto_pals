@@ -129,3 +129,36 @@ func ReadBase64File(filename string) ([]byte, error) {
 func ParseBase64(l string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(l)
 }
+
+type ProfileRole string
+
+const (
+	User  ProfileRole = "user"
+	Admin ProfileRole = "admin"
+)
+
+type Profile struct {
+	user string
+	uid  int
+	role ProfileRole
+}
+
+func (p Profile) Encode() string {
+	return fmt.Sprintf("email=%s&uid=%d&role=%s", p.user, p.uid, p.role)
+}
+
+func ParseCookie(s string) map[string]string {
+	m := make(map[string]string)
+	st := strings.Split(s, "&")
+	for _, pair := range st {
+		p := strings.Split(pair, "=")
+		m[p[0]] = p[1]
+	}
+	return m
+}
+
+func ProfileFor(email string) Profile {
+	r := strings.NewReplacer("=", "", "&", "")
+	email = fmt.Sprintf(r.Replace(email))
+	return Profile{user: email, uid: 10, role: User}
+}

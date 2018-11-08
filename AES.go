@@ -228,7 +228,12 @@ func GuessAESMode(e EncryptedText) AESMode {
 	return CBC
 }
 
-var unknownKey, _ = generateRandomBlock()
+var unknownKey = GenerateKey()
+
+func GenerateKey() []byte {
+	k, _ := generateRandomBlock()
+	return k
+}
 
 func GetEncryptionFunction(prepend []byte) func(plain []byte) (EncryptedText, error) {
 	return func(plain []byte) (EncryptedText, error) {

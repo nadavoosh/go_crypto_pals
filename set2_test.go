@@ -59,7 +59,7 @@ func TestEncryptAESCBC(t *testing.T) {
 	}
 }
 
-func TestencryptCBC(t *testing.T) {
+func TestEncryptCBC(t *testing.T) {
 	filename := "challenges/challenge10.txt"
 	decoded, err := ReadBase64File(filename)
 	if err != nil {
@@ -97,7 +97,6 @@ func TestDecryptOracle(t *testing.T) {
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", prepend, err)
 	}
-
 	f := GetEncryptionFunction(parsed)
 	plaintext, err := DecryptOracle(f)
 	if err != nil {
@@ -108,3 +107,25 @@ func TestDecryptOracle(t *testing.T) {
 		t.Errorf("DecryptOracle(f) returned incorrect plaintext: got:\n %q \n want \n %q", plaintext, want)
 	}
 }
+func TestParseCookie(t *testing.T) {
+	in := "foo=bar&baz=qux&zap=zazzle"
+	got := ParseCookie(in)
+	if got["foo"] != "bar" || got["baz"] != "qux" || got["zap"] != "zazzle" {
+		t.Errorf("ParseCookie gave some bad results: %s", got)
+	}
+}
+func TestProfileFor(t *testing.T) {
+	got := ProfileFor("foo@bar.com")
+	if got.Encode() != "email=foo@bar.com&uid=10&role=user" {
+		t.Errorf("ProfileFor gave some bad results: %s", got.Encode())
+	}
+}
+
+// func TestEncryptProfile(t *testing.T) {
+// 	p := ProfileFor("foo@bar.com")
+// 	key, err := Encrypt(ECB, PlainText{ plaintext: []byte(p.Encode()), key: GenerateKey()})
+// 	if err != nil {
+// 		t.Errorf("Encrypt threw an error: %s", err)
+// 	}
+
+// }
