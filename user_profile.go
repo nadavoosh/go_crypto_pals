@@ -1,6 +1,8 @@
 package cryptopals
 
 import (
+	"bytes"
+	"crypto/aes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -34,12 +36,13 @@ func sortStringMap(m map[string]string) []string {
 }
 
 func DumpCookie(m map[string]string) string {
-	var cookie []string
-	// To store the keys in slice in sorted order
-	for _, k := range sortStringMap(m) {
-		cookie = append(cookie, fmt.Sprintf("%s=%s", k, m[k]))
-	}
-	return strings.Join(cookie, "&")
+	// var cookie []string
+	// // To store the keys in slice in sorted order
+	// for _, k := range sortStringMap(m) {
+	// 	cookie = append(cookie, fmt.Sprintf("%s=%s", k, m[k]))
+	// }
+	// return strings.Join(cookie, "&")
+	return fmt.Sprintf("email=%s&uid=%s&role=%s", m["email"], m["uid"], m["role"])
 }
 
 func ParseCookie(s string) map[string]string {
@@ -52,8 +55,35 @@ func ParseCookie(s string) map[string]string {
 	return m
 }
 
-func ProfileFor(email string) Profile {
+func ProfileFor(email []byte) Profile {
 	r := strings.NewReplacer("=", "", "&", "")
-	email = fmt.Sprintf(r.Replace(email))
-	return Profile{user: email, uid: 10, role: User}
+	return Profile{user: fmt.Sprintf(r.Replace(string(email))), uid: 10, role: User}
+}
+
+func EncryptedProfileFor(email []byte) (EncryptedText, error) {
+	p := ProfileFor(email).Encode()
+	return Encrypt(ECB, PlainText{plaintext: []byte(p), key: FixedKey})
+}
+
+func getBytesOfLen(l int) []byte {
+	return bytes.Repeat(ByteA, l)
+}
+
+func BuildAdminProfile(email string) (EncryptedText, error) {
+	// produce email=XXXXXXX block and
+	// produce XXXXXXX&uid=10&role= block
+	t, err := EncryptedProfileFor(getBytesOfLen(2*aes.BlockSize - len("email=&uid=10&role=")))
+	if err != nil {
+		return EncryptedText{}, err
+	}
+	emailUIDBlock := t.ciphertext[0 : 2*aes.BlockSize]
+	// produce adminPPPPPP block
+	a := PKCSPadding([]byte("admin"), aes.BlockSize)
+	emailStub := append(getBytesOfLen(aes.BlockSize-len("email=")), a...)
+	t, err = EncryptedProfileFor(emailStub)
+	if err != nil {
+		return EncryptedText{}, err
+	}
+	adminBlock := t.ciphertext[aes.BlockSize : 2*aes.BlockSize]
+	return EncryptedText{ciphertext: append(emailUIDBlock, adminBlock...), key: FixedKey, padding: PKCS}, err
 }

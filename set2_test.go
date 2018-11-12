@@ -115,49 +115,39 @@ func TestParseCookie(t *testing.T) {
 	}
 }
 
-// func TestProfileFor(t *testing.T) {
-// 	got := ProfileFor("foo@bar.com")
-// 	if got.Encode() != "email=foo@bar.com&uid=10&role=user" {
-// 		t.Errorf("ProfileFor gave some bad results: %s", got.Encode())
-// 	}
-// }
-
 func TestEncryptProfile(t *testing.T) {
-	key := GenerateKey()
-	p := ProfileFor("foo@bar.com")
-
-	enc, err := Encrypt(ECB, PlainText{plaintext: []byte(p.Encode()), key: key})
-
+	email := []byte("foo@bar.com")
+	enc, err := EncryptedProfileFor(email)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
-
 	role, err := Decrypt(ECB, enc)
 	if err != nil {
-		t.Errorf("Encrypt threw an error: %s", err)
+		t.Errorf("Decrypt threw an error: %s", err)
 	}
 	cookie := ParseCookie(string(role.plaintext))
-	if cookie["role"] != "user" || cookie["email"] != "foo@bar.com" || cookie["uid"] != "10" {
-		t.Errorf("ParseCookie for %s returned: %s", p.Encode(), role.plaintext)
+	if cookie["role"] != "user" || cookie["email"] != string(email) || cookie["uid"] != "10" {
+		t.Errorf("ParseCookie for %s returned: %s", email, role.plaintext)
 	}
 }
 
 func TestCreateAdminProfile(t *testing.T) {
-	key := GenerateKey()
-	p := ProfileFor("foo@bar.com")
-
-	enc, err := Encrypt(ECB, PlainText{plaintext: []byte(p.Encode()), key: key})
+	email := "foo@bar.com"
+	enc, err := BuildAdminProfile(email)
 
 	if err != nil {
-		t.Errorf("Encrypt threw an error: %s", err)
+		t.Errorf("BuildAdminProfile threw an error: %s", err)
+		return
 	}
-
 	role, err := Decrypt(ECB, enc)
 	if err != nil {
-		t.Errorf("Encrypt threw an error: %s", err)
+		t.Errorf("Decrypt threw an error: %s", err)
+		return
 	}
 	cookie := ParseCookie(string(role.plaintext))
-	if cookie["role"] != "user" || cookie["email"] != "foo@bar.com" || cookie["uid"] != "10" {
-		t.Errorf("ParseCookie for %s returned: %s", p.Encode(), role.plaintext)
+
+	if cookie["role"] != "admin" {
+		t.Errorf(string(role.plaintext))
+		t.Errorf("BuildAdminProfile did not return an admin profile, got %s ", cookie["role"])
 	}
 }

@@ -228,16 +228,16 @@ func GuessAESMode(e EncryptedText) AESMode {
 	return CBC
 }
 
-var unknownKey = GenerateKey()
+var FixedKey = GenerateKey()
 
 func GenerateKey() []byte {
 	k, _ := generateRandomBlock()
 	return k
 }
 
-func GetEncryptionFunction(prepend []byte) func(plain []byte) (EncryptedText, error) {
+func GetEncryptionFunction(a []byte) func(plain []byte) (EncryptedText, error) {
 	return func(plain []byte) (EncryptedText, error) {
-		d := PlainText{plaintext: append(plain, prepend...), key: unknownKey}
+		d := PlainText{plaintext: append(plain, a...), key: FixedKey}
 		return EncryptECB(d)
 	}
 }
@@ -262,7 +262,8 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 	return 0, nil
 }
 
-var byteA = []byte("A")
+// ByteA is the "A" byte
+var ByteA = []byte("A")
 
 func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
 	m := make(map[string]byte)
@@ -283,7 +284,7 @@ func DecryptOracle(f EncryptionFn) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	ci, err := f(bytes.Repeat(byteA, 2*blocksize))
+	ci, err := f(bytes.Repeat(ByteA, 2*blocksize))
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +298,7 @@ func DecryptOracle(f EncryptionFn) ([]byte, error) {
 	var nPlain []byte
 	for n := 0; n < len(encryptedText.ciphertext)/blocksize; n++ {
 		for j := 0; j < blocksize; j++ {
-			baseInput := bytes.Repeat(byteA, blocksize-(j+1))
+			baseInput := bytes.Repeat(ByteA, blocksize-(j+1))
 
 			testInput := append(baseInput, nPlain...)
 
@@ -313,7 +314,7 @@ func DecryptOracle(f EncryptionFn) ([]byte, error) {
 			if deciphered, ok := m[string(actual)]; ok {
 				nPlain = append(nPlain, deciphered)
 			} else {
-				fmt.Printf("encrypted string %d not found in decryption map for byte %d\n", actual, j)
+				// fmt.Printf("encrypted string %d not found in decryption map for byte %d\n", actual, j)
 			}
 		}
 	}
