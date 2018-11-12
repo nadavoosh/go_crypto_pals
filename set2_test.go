@@ -114,18 +114,50 @@ func TestParseCookie(t *testing.T) {
 		t.Errorf("ParseCookie gave some bad results: %s", got)
 	}
 }
-func TestProfileFor(t *testing.T) {
-	got := ProfileFor("foo@bar.com")
-	if got.Encode() != "email=foo@bar.com&uid=10&role=user" {
-		t.Errorf("ProfileFor gave some bad results: %s", got.Encode())
+
+// func TestProfileFor(t *testing.T) {
+// 	got := ProfileFor("foo@bar.com")
+// 	if got.Encode() != "email=foo@bar.com&uid=10&role=user" {
+// 		t.Errorf("ProfileFor gave some bad results: %s", got.Encode())
+// 	}
+// }
+
+func TestEncryptProfile(t *testing.T) {
+	key := GenerateKey()
+	p := ProfileFor("foo@bar.com")
+
+	enc, err := Encrypt(ECB, PlainText{plaintext: []byte(p.Encode()), key: key})
+
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+	}
+
+	role, err := Decrypt(ECB, enc)
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+	}
+	cookie := ParseCookie(string(role.plaintext))
+	if cookie["role"] != "user" || cookie["email"] != "foo@bar.com" || cookie["uid"] != "10" {
+		t.Errorf("ParseCookie for %s returned: %s", p.Encode(), role.plaintext)
 	}
 }
 
-// func TestEncryptProfile(t *testing.T) {
-// 	p := ProfileFor("foo@bar.com")
-// 	key, err := Encrypt(ECB, PlainText{ plaintext: []byte(p.Encode()), key: GenerateKey()})
-// 	if err != nil {
-// 		t.Errorf("Encrypt threw an error: %s", err)
-// 	}
+func TestCreateAdminProfile(t *testing.T) {
+	key := GenerateKey()
+	p := ProfileFor("foo@bar.com")
 
-// }
+	enc, err := Encrypt(ECB, PlainText{plaintext: []byte(p.Encode()), key: key})
+
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+	}
+
+	role, err := Decrypt(ECB, enc)
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+	}
+	cookie := ParseCookie(string(role.plaintext))
+	if cookie["role"] != "user" || cookie["email"] != "foo@bar.com" || cookie["uid"] != "10" {
+		t.Errorf("ParseCookie for %s returned: %s", p.Encode(), role.plaintext)
+	}
+}
