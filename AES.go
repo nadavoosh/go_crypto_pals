@@ -82,6 +82,8 @@ func RemovePKCSPadding(b []byte) []byte {
 		fmt.Println("nil slice passed to RemovePKCSPadding")
 	}
 	paddingCount := int(b[len(b)-1])
+	// fmt.Printf("last byte is %s\n", string(b[len(b)-1]))
+	// fmt.Printf("Removing %d bytes\n", paddingCount)
 	return b[:len(b)-paddingCount]
 }
 
@@ -241,8 +243,7 @@ func GenerateKey() []byte {
 
 func GenerateRandomBytes() []byte {
 	mathRand.Seed(time.Now().UnixNano())
-	prepend := make([]byte, mathRand.Intn(25))
-	fmt.Printf("prepending %d bytes\n", len(prepend))
+	prepend := make([]byte, mathRand.Intn(1000))
 	_, _ = rand.Read(prepend)
 	return prepend
 }
@@ -280,10 +281,8 @@ func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map
 		}
 		ret := p.ciphertext[(blockNumber * blocksize) : (blockNumber+1)*blocksize]
 		m[string(ret)] = i
-		// fmt.Printf("ret is %s\n", string(ret))
-		// fmt.Printf("blockNumber * blocksize is %d\n", blockNumber * blocksize)
-		// fmt.Printf("(blockNumber+1)*blocksize is %d\n", (blockNumber+1)*blocksize)
-		// fmt.Printf("p.ciphertext is %s\n", string(p.ciphertext))
+		// fmt.Printf("len of baseinput is %d; len of result is %d\n", len(b), len(p.ciphertext))
+		// fmt.Printf("grabbing %d to %d from %d\n", blockNumber * blocksize, (blockNumber+1)*blocksize, len(p.ciphertext))
 	}
 	return m, nil
 }
@@ -382,23 +381,26 @@ func DecryptOracleHarder(f EncryptionFn) ([]byte, error) {
 	}
 	encryptedText, err := f(nil)
 	// fmt.Printf("len(encryptedText.ciphertext) is %d\n", len(encryptedText.ciphertext))
-
 	if err != nil {
 		return nil, err
 	}
 	var nPlain []byte
 	paddingLen, blocksToSkip, err := getPaddingLength(f, blocksize)
-	fmt.Printf("paddingLen is %d and blocksToSkip is %d\n", paddingLen, blocksToSkip)
+	// fmt.Printf("paddingLen is %d and blocksToSkip is %d, which means %d bytes were prepended to the plaintext before encryption\n", paddingLen, blocksToSkip, blocksToSkip*blocksize-paddingLen)
 	if err != nil {
 		return nil, err
 	}
 	// fmt.Printf("blocksToSkip is %d\n", blocksToSkip)
-	// fmt.Printf("len(encryptedText.ciphertext) / blocksize) is %d\n", len(encryptedText.ciphertext) / blocksize)
-	for n := blocksToSkip; n < len(encryptedText.ciphertext)/blocksize+blocksToSkip; n++ {
+	// fmt.Printf("len(encryptedText.ciphertext) / blocksize) is %d\n", len(encryptedText.ciphertext)/blocksize)
+	for n := blocksToSkip; n < len(encryptedText.ciphertext)/blocksize+1; n++ {
+		// fmt.Printf("we are on block %d out of %d total blocks\n", n, len(encryptedText.ciphertext)/blocksize)
 		for j := 0; j < blocksize; j++ {
+			// fmt.Printf("we are on byte %d of block %d out of %d total blocks\n", j, n, len(encryptedText.ciphertext)/blocksize)
 			baseInput := bytes.Repeat(ByteA, paddingLen+blocksize-(j+1))
 			testInput := append(baseInput, nPlain...)
+			// fmt.Printf("baseInput is %s with len %d\n", string(baseInput), len(baseInput))
 			// fmt.Printf("testInput is %s with len %d\n", string(testInput), len(testInput))
+			// fmt.Printf("nPlain is %s with len %d\n", string(nPlain), len(nPlain))
 			// fmt.Printf("block is %d\n", n)
 			m, err := buildMap(f, testInput, blocksize, n)
 			if err != nil {
@@ -408,9 +410,13 @@ func DecryptOracleHarder(f EncryptionFn) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+			// fmt.Printf("len of baseinput is %d; len of result is %d\n", len(baseInput), len(p.ciphertext))
+			// fmt.Printf("%d: grabbing %d to %d from %d\n", j, n*blocksize, (n+1)*blocksize, len(p.ciphertext))
+			if len(p.ciphertext) <= n*blocksize {
+				// this happens when....
+				continue
+			}
 			actual := p.ciphertext[(n * blocksize) : (n+1)*blocksize]
-			// fmt.Printf("selecting from %d to %d of total\n", n*blocksize, (n+1)*blocksize)
-			// fmt.Printf("p.ciphertext is %d\n", len(p.ciphertext))
 			if deciphered, ok := m[string(actual)]; ok {
 				nPlain = append(nPlain, deciphered)
 			} else {
