@@ -7,8 +7,24 @@ import (
 	"time"
 )
 
+func getEncryptionFunction(a []byte) func(plain []byte) (EncryptedText, error) {
+	return func(plain []byte) (EncryptedText, error) {
+		d := PlainText{plaintext: append(plain, a...), key: FixedKey}
+		return EncryptECB(d)
+	}
+}
+
+func getEncryptionFunctionHarder(a []byte) func(plain []byte) (EncryptedText, error) {
+	return func(plain []byte) (EncryptedText, error) {
+		d := PlainText{plaintext: append(append(FixedBytes, plain...), a...), key: FixedKey}
+		return EncryptECB(d)
+	}
+}
+
+var YELLOWSUBMARINE = "YELLOW SUBMARINE"
+
 func TestPKCS7Padding(t *testing.T) {
-	in := "YELLOW SUBMARINE"
+	in := YELLOWSUBMARINE
 	want := "YELLOW SUBMARINE\x04\x04\x04\x04"
 	got := PKCSPadString(in, 20)
 	if got != want {
@@ -17,7 +33,7 @@ func TestPKCS7Padding(t *testing.T) {
 }
 
 func TestRemovePKCS7Padding(t *testing.T) {
-	want := "YELLOW SUBMARINE"
+	want := YELLOWSUBMARINE
 	in := []byte("YELLOW SUBMARINE\x04\x04\x04\x04")
 	got := RemovePKCSPadding(in)
 	if string(got) != want {
@@ -91,13 +107,15 @@ func TestEncryptionOracle(t *testing.T) {
 		t.Errorf("GuessAESMode returned incorrect mode: got %d, want %d", guessed, mode)
 	}
 }
+
+var Base64EncodedString = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
+
 func TestDecryptOracle(t *testing.T) {
-	prepend := "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
-	parsed, err := ParseBase64(prepend)
+	parsed, err := ParseBase64(Base64EncodedString)
 	if err != nil {
-		t.Errorf("ParseBase64(%q) threw an error: %s", prepend, err)
+		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
-	f := GetEncryptionFunction(parsed)
+	f := getEncryptionFunction(parsed)
 	plaintext, err := DecryptOracle(f)
 	if err != nil {
 		t.Errorf("DecryptOracle(f) threw an error: %s", err)
@@ -149,5 +167,23 @@ func TestCreateAdminProfile(t *testing.T) {
 	if cookie["role"] != "admin" {
 		t.Errorf(string(role.plaintext))
 		t.Errorf("BuildAdminProfile did not return an admin profile, got %s ", cookie["role"])
+	}
+}
+
+func TestDecryptOracleHarder(t *testing.T) {
+	parsed, err := ParseBase64(Base64EncodedString)
+	if err != nil {
+		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
+		return
+	}
+	f := getEncryptionFunctionHarder(parsed)
+	plaintext, err := DecryptOracleHarder(f)
+	if err != nil {
+		t.Errorf("DecryptOracleHarder(f) threw an error: %s", err)
+		return
+	}
+	want := "Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n"
+	if string(plaintext) != want {
+		t.Errorf("DecryptOracleHarder(f) returned incorrect plaintext: got:\n %q \n want \n %q", plaintext, want)
 	}
 }
