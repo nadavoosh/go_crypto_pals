@@ -86,15 +86,6 @@ func AssertEqualLen(b1, b2 []byte) error {
 	return nil
 }
 
-func PKCSPadString(s string, blocksize int) string {
-	return string(PKCSPadding([]byte(s), blocksize))
-}
-
-func PKCSPadding(b []byte, blocksize int) []byte {
-	add := blocksize - (len(b) % blocksize)
-	return append(b, FillByteSlice(add, byte(add))...)
-}
-
 func ScanFile(filename string) ([]string, error) {
 	var lines []string
 	f, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)

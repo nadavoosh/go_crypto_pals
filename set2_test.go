@@ -187,3 +187,18 @@ func TestDecryptOracleHarder(t *testing.T) {
 		t.Errorf("DecryptOracleHarder(f) returned incorrect plaintext: got:\n %q \n want \n %q", plaintext, want)
 	}
 }
+
+func TestPaddingValidation(t *testing.T) {
+	valid := []byte("ICE ICE BABY\x04\x04\x04\x04")
+	invalid1 := []byte("ICE ICE BABY\x05\x05\x05\x05")
+	invalid2 := []byte("ICE ICE BABY\x01\x02\x03\x04")
+	if !ValidatePKCS(valid) {
+		t.Errorf("ValidatePKCS incorrectly validated %s", valid)
+	}
+	if ValidatePKCS(invalid1) {
+		t.Errorf("ValidatePKCS incorrectly validated %s", invalid1)
+	}
+	if ValidatePKCS(invalid2) {
+		t.Errorf("ValidatePKCS incorrectly validated %s", invalid2)
+	}
+}

@@ -18,13 +18,6 @@ const (
 	CBC AESMode = 1
 )
 
-type Padding int
-
-const (
-	None Padding = 0
-	PKCS Padding = 1
-)
-
 func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 	switch mode {
 	case ECB:
@@ -75,16 +68,6 @@ func DecryptECB(e EncryptedText) (PlainText, error) {
 		plaintext = RemovePKCSPadding(plaintext)
 	}
 	return PlainText{plaintext: plaintext}, nil
-}
-
-func RemovePKCSPadding(b []byte) []byte {
-	if b == nil {
-		fmt.Println("nil slice passed to RemovePKCSPadding")
-	}
-	paddingCount := int(b[len(b)-1])
-	// fmt.Printf("last byte is %s\n", string(b[len(b)-1]))
-	// fmt.Printf("Removing %d bytes\n", paddingCount)
-	return b[:len(b)-paddingCount]
 }
 
 func encryptSingleBlock(cipher cipher.Block, plaintext []byte) []byte {
@@ -362,13 +345,15 @@ func DecryptOracle(f EncryptionFn) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
+			if len(match.ciphertext) <= n*blocksize {
+				// this happens when j is large enough to cause len(f(baseInput).ciphertext) to be smaller than the ciphertexts in the map, since a block-boundary was crossed.
+				continue
+			}
 			actual := match.ciphertext[(n * blocksize) : (n+1)*blocksize]
 			if deciphered, ok := m[string(actual)]; ok {
 				nPlain = append(nPlain, deciphered)
 			} else {
-				// this happens when j is large enough to cause len(f(baseInput).ciphertext) to be smaller than the ciphertexts in the map, since a block-boundary was crossed.
-				// helpful debugging logs:
-				// fmt.Printf("base input len of %02d, test input has len %02d, iteration %02d, with ciphertext of len %d\n",len(baseInput), len(testInput), j, len(match.ciphertext))
+				// fmt.Printf("block %02d, base input len of %02d, test input has len %02d, iteration %02d, with ciphertext of len %d\n",n, len(baseInput), len(testInput), j, len(match.ciphertext))
 				// fmt.Printf("encrypted string %s not found in decryption map for byte %d\n", actual, j)
 				continue
 			}
