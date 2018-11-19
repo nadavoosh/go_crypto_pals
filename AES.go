@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	mathRand "math/rand"
-	"time"
 )
 
 type AESMode int
@@ -184,28 +183,6 @@ func addRandomBytes(p []byte) ([]byte, error) {
 	return append(append(beforeBytes, p...), afterBytes...), nil
 }
 
-func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
-	b, err := addRandomBytes(plain)
-	if err != nil {
-		return EncryptedText{}, err
-	}
-	key, err := generateRandomBlock()
-	if err != nil {
-		return EncryptedText{}, err
-	}
-	d := PlainText{plaintext: b, key: key}
-	switch mode {
-	case ECB:
-		// fmt.Printf("Encrypting with ECB Mode\n")
-		return Encrypt(ECB, d)
-	case CBC:
-		// fmt.Printf("Encrypting with CBC Mode\n")
-		return Encrypt(CBC, d)
-	default:
-		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
-	}
-}
-
 func GuessAESMode(e EncryptedText) AESMode {
 	if smellsOfECB(e.ciphertext) {
 		// fmt.Printf("Guessing ECB\n")
@@ -213,23 +190,6 @@ func GuessAESMode(e EncryptedText) AESMode {
 	}
 	// fmt.Printf("Guessing CBC\n")
 	return CBC
-}
-
-var FixedKey = GenerateKey()
-var FixedBytes = GenerateRandomBytes()
-
-// GenerateKey returns a random key
-func GenerateKey() []byte {
-	k, _ := generateRandomBlock()
-	return k
-}
-
-func GenerateRandomBytes() []byte {
-	mathRand.Seed(time.Now().UnixNano())
-	prepend := make([]byte, mathRand.Intn(1000))
-	_, _ = rand.Read(prepend)
-	// fmt.Printf("adding %d bytes\n", len(prepend))
-	return prepend
 }
 
 func inferBlocksize(f EncryptionFn) (int, error) {
@@ -251,6 +211,3 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 	}
 	return 0, nil
 }
-
-// ByteA is the "A" byte
-var ByteA = []byte("A")

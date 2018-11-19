@@ -7,6 +7,28 @@ import (
 
 type EncryptionFn func(plain []byte) (EncryptedText, error)
 
+func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
+	b, err := addRandomBytes(plain)
+	if err != nil {
+		return EncryptedText{}, err
+	}
+	key, err := generateRandomBlock()
+	if err != nil {
+		return EncryptedText{}, err
+	}
+	d := PlainText{plaintext: b, key: key}
+	switch mode {
+	case ECB:
+		// fmt.Printf("Encrypting with ECB Mode\n")
+		return Encrypt(ECB, d)
+	case CBC:
+		// fmt.Printf("Encrypting with CBC Mode\n")
+		return Encrypt(CBC, d)
+	default:
+		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
+	}
+}
+
 func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
 	m := make(map[string]byte)
 	for i := byte(0); i < 255; i++ {
