@@ -202,3 +202,6 @@ func TestPaddingValidation(t *testing.T) {
 		t.Errorf("ValidatePKCS incorrectly validated third string: %s", invalid2)
 	}
 }
+
+func TestCBCBitflipping(t *testing.T) {
+}
