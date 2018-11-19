@@ -190,15 +190,15 @@ func TestDecryptOracleHarder(t *testing.T) {
 
 func TestPaddingValidation(t *testing.T) {
 	valid := []byte("ICE ICE BABY\x04\x04\x04\x04")
-	invalid1 := []byte("ICE ICE BABY\x05\x05\x05\x05")
-	invalid2 := []byte("ICE ICE BABY\x01\x02\x03\x04")
 	if !ValidatePKCS(valid) {
-		t.Errorf("ValidatePKCS incorrectly validated %s", valid)
+		t.Errorf("ValidatePKCS incorrectly invalidated first string: %s", valid)
 	}
+	invalid1 := []byte("ICE ICE BABY\x05\x05\x05\x05")
 	if ValidatePKCS(invalid1) {
-		t.Errorf("ValidatePKCS incorrectly validated %s", invalid1)
+		t.Errorf("ValidatePKCS incorrectly validated second string: %s", invalid1)
 	}
+	invalid2 := []byte("ICE ICE BABY\x01\x02\x03\x04")
 	if ValidatePKCS(invalid2) {
-		t.Errorf("ValidatePKCS incorrectly validated %s", invalid2)
+		t.Errorf("ValidatePKCS incorrectly validated third string: %s", invalid2)
 	}
 }
