@@ -214,10 +214,10 @@ func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
 	d := PlainText{plaintext: b, key: key}
 	switch mode {
 	case ECB:
-		fmt.Printf("Encrypting with ECB Mode\n")
+		// fmt.Printf("Encrypting with ECB Mode\n")
 		return Encrypt(ECB, d)
 	case CBC:
-		fmt.Printf("Encrypting with CBC Mode\n")
+		// fmt.Printf("Encrypting with CBC Mode\n")
 		return Encrypt(CBC, d)
 	default:
 		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
@@ -226,16 +226,17 @@ func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
 
 func GuessAESMode(e EncryptedText) AESMode {
 	if smellsOfECB(e.ciphertext) {
-		fmt.Printf("Guessing ECB\n")
+		// fmt.Printf("Guessing ECB\n")
 		return ECB
 	}
-	fmt.Printf("Guessing CBC\n")
+	// fmt.Printf("Guessing CBC\n")
 	return CBC
 }
 
 var FixedKey = GenerateKey()
 var FixedBytes = GenerateRandomBytes()
 
+// GenerateKey returns a random key
 func GenerateKey() []byte {
 	k, _ := generateRandomBlock()
 	return k
@@ -245,6 +246,7 @@ func GenerateRandomBytes() []byte {
 	mathRand.Seed(time.Now().UnixNano())
 	prepend := make([]byte, mathRand.Intn(1000))
 	_, _ = rand.Read(prepend)
+	// fmt.Printf("adding %d bytes\n", len(prepend))
 	return prepend
 }
 
@@ -281,50 +283,8 @@ func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map
 		}
 		ret := p.ciphertext[(blockNumber * blocksize) : (blockNumber+1)*blocksize]
 		m[string(ret)] = i
-		// fmt.Printf("len of baseinput is %d; len of result is %d\n", len(b), len(p.ciphertext))
-		// fmt.Printf("grabbing %d to %d from %d\n", blockNumber * blocksize, (blockNumber+1)*blocksize, len(p.ciphertext))
 	}
 	return m, nil
-}
-
-func DecryptOracle(f EncryptionFn) ([]byte, error) {
-	blocksize, err := inferBlocksize(f)
-	if err != nil {
-		return nil, err
-	}
-	ci, err := f(bytes.Repeat(ByteA, 3*blocksize))
-	if err != nil {
-		return nil, err
-	}
-	if !smellsOfECB(ci.ciphertext) {
-		return nil, fmt.Errorf("ECB Mode not detected in ciphertext")
-	}
-	encryptedText, err := f(nil)
-	if err != nil {
-		return nil, err
-	}
-	var nPlain []byte
-	for n := 0; n < len(encryptedText.ciphertext)/blocksize; n++ {
-		for j := 0; j < blocksize; j++ {
-			baseInput := bytes.Repeat(ByteA, blocksize-(j+1))
-			testInput := append(baseInput, nPlain...)
-			m, err := buildMap(f, testInput, blocksize, n)
-			if err != nil {
-				return nil, err
-			}
-			p, err := f(baseInput)
-			if err != nil {
-				return nil, err
-			}
-			actual := p.ciphertext[(n * blocksize) : (n+1)*blocksize]
-			if deciphered, ok := m[string(actual)]; ok {
-				nPlain = append(nPlain, deciphered)
-			} else {
-				// fmt.Printf("encrypted string %d not found in decryption map for byte %d\n", actual, j)
-			}
-		}
-	}
-	return RemovePKCSPadding(nPlain), nil
 }
 
 func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
@@ -367,60 +327,50 @@ func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	return 0, 0, fmt.Errorf("Could not create a third identical ciphertext block, something went wrong")
 }
 
-func DecryptOracleHarder(f EncryptionFn) ([]byte, error) {
+// DecryptOracle decrypts fixed text that is appended to the plaintext input to fixed-key EncryptionFn
+func DecryptOracle(f EncryptionFn) ([]byte, error) {
 	blocksize, err := inferBlocksize(f)
 	if err != nil {
 		return nil, err
 	}
-	ci, err := f(bytes.Repeat(ByteA, 3*blocksize))
+	sampleCiphertext, err := f(bytes.Repeat(ByteA, 3*blocksize))
 	if err != nil {
 		return nil, err
 	}
-	if !smellsOfECB(ci.ciphertext) {
+	if !smellsOfECB(sampleCiphertext.ciphertext) {
 		return nil, fmt.Errorf("ECB Mode not detected in ciphertext")
 	}
-	encryptedText, err := f(nil)
-	// fmt.Printf("len(encryptedText.ciphertext) is %d\n", len(encryptedText.ciphertext))
+	baseCiphertext, err := f(nil)
 	if err != nil {
 		return nil, err
 	}
 	var nPlain []byte
+	// handle any prepended blocks:
 	paddingLen, blocksToSkip, err := getPaddingLength(f, blocksize)
-	// fmt.Printf("paddingLen is %d and blocksToSkip is %d, which means %d bytes were prepended to the plaintext before encryption\n", paddingLen, blocksToSkip, blocksToSkip*blocksize-paddingLen)
 	if err != nil {
 		return nil, err
 	}
-	// fmt.Printf("blocksToSkip is %d\n", blocksToSkip)
-	// fmt.Printf("len(encryptedText.ciphertext) / blocksize) is %d\n", len(encryptedText.ciphertext)/blocksize)
-	for n := blocksToSkip; n < len(encryptedText.ciphertext)/blocksize+1; n++ {
-		// fmt.Printf("we are on block %d out of %d total blocks\n", n, len(encryptedText.ciphertext)/blocksize)
+	for n := blocksToSkip; n < len(baseCiphertext.ciphertext)/blocksize+1; n++ {
 		for j := 0; j < blocksize; j++ {
-			// fmt.Printf("we are on byte %d of block %d out of %d total blocks\n", j, n, len(encryptedText.ciphertext)/blocksize)
 			baseInput := bytes.Repeat(ByteA, paddingLen+blocksize-(j+1))
 			testInput := append(baseInput, nPlain...)
-			// fmt.Printf("baseInput is %s with len %d\n", string(baseInput), len(baseInput))
-			// fmt.Printf("testInput is %s with len %d\n", string(testInput), len(testInput))
-			// fmt.Printf("nPlain is %s with len %d\n", string(nPlain), len(nPlain))
-			// fmt.Printf("block is %d\n", n)
 			m, err := buildMap(f, testInput, blocksize, n)
 			if err != nil {
 				return nil, err
 			}
-			p, err := f(baseInput)
+			match, err := f(baseInput)
 			if err != nil {
 				return nil, err
 			}
-			// fmt.Printf("len of baseinput is %d; len of result is %d\n", len(baseInput), len(p.ciphertext))
-			// fmt.Printf("%d: grabbing %d to %d from %d\n", j, n*blocksize, (n+1)*blocksize, len(p.ciphertext))
-			if len(p.ciphertext) <= n*blocksize {
-				// this happens when....
-				continue
-			}
-			actual := p.ciphertext[(n * blocksize) : (n+1)*blocksize]
+			actual := match.ciphertext[(n * blocksize) : (n+1)*blocksize]
 			if deciphered, ok := m[string(actual)]; ok {
 				nPlain = append(nPlain, deciphered)
 			} else {
-				// fmt.Printf("encrypted string %d not found in decryption map for byte %d\n", actual, j)
+				// this happens when j is large enough to cause len(f(baseInput).ciphertext) to be smaller than the ciphertexts in the map, since a block-boundary was crossed.
+				// helpful debugging logs:
+				// fmt.Printf("base input len of %02d, test input has len %02d, iteration %02d, with ciphertext of len %d\n",len(baseInput), len(testInput), j, len(match.ciphertext))
+				// fmt.Printf("encrypted string %s not found in decryption map for byte %d\n", actual, j)
+				continue
 			}
 		}
 	}

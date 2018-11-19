@@ -177,7 +177,7 @@ func TestDecryptOracleHarder(t *testing.T) {
 		return
 	}
 	f := getEncryptionFunctionHarder(parsed)
-	plaintext, err := DecryptOracleHarder(f)
+	plaintext, err := DecryptOracle(f)
 	if err != nil {
 		t.Errorf("DecryptOracleHarder(f) threw an error: %s", err)
 		return
