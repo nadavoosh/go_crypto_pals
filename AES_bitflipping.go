@@ -82,9 +82,7 @@ func ModifyCiphertextForAdmin(e EncryptedText) (EncryptedText, error) {
 	chunkToFlip := 2 // TODO: calculate this value, by figuring out the length of prepended bytes
 	flippedCiphertext := FlipBitsToHide(chunks[chunkToFlip])
 	chunks[chunkToFlip] = flippedCiphertext
-	return EncryptedText{
-		ciphertext: bytes.Join(chunks, nil),
-		iv:         e.iv,
-		key:        e.key,
-	}, nil
+	ret := e
+	ret.ciphertext =bytes.Join(chunks, nil)
+	return ret, nil
 }
