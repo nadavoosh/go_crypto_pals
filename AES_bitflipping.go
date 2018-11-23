@@ -1,7 +1,8 @@
 package cryptopals
 
 import (
-	"crypto/aes"
+	"bytes"
+	"fmt"
 	"strings"
 )
 
@@ -18,8 +19,10 @@ func unescape(input string) string {
 func EncryptUserData(input []byte) (EncryptedText, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
+	plaintext := append(prepend, append(escape(string(input)), after...)...)
+	// fmt.Printf("plaintext is %s\n", plaintext)
 	return Encrypt(CBC, PlainText{
-		plaintext: append(prepend, append(escape(string(input)), after...)...),
+		plaintext: plaintext,
 		key:       FixedKey,
 	})
 }
@@ -46,9 +49,15 @@ func splitString(s, sep string) []string {
 func parseString(s string) map[string]string {
 	m := make(map[string]string)
 	st := splitString(s, ";")
+	// fmt.Printf("s is %s\n", s)
 	for _, pair := range st {
 		p := splitString(pair, "=")
-		m[unescape(p[0])] = unescape(p[1])
+		if len(p) > 1 {
+			m[unescape(p[0])] = unescape(p[1])
+		} else {
+			fmt.Printf("No `=` found in %s\n", pair)
+		}
+
 	}
 	return m
 }
@@ -65,13 +74,17 @@ func DetectAdminString(e EncryptedText) (bool, error) {
 	return false, nil
 }
 
-func BitflipForAdmin(original []byte, e EncryptedText) (EncryptedText, error) {
-	// _, _, err := GetPaddingLength(EncryptUserData, aes.BlockSize)
-	if err != nil {
-		return EncryptedText{}, err
-	}
+func FlipBitsToHide(block []byte) []byte {
+	return FlexibleXor(block, GetBlankForAES())
+}
+
+func ModifyCiphertextForAdmin(e EncryptedText) (EncryptedText, error) {
+	chunks := ChunkForAES(e.ciphertext)
+	chunkToFlip := 2
+	flippedCiphertext := FlipBitsToHide(chunks[chunkToFlip])
+	chunks[chunkToFlip] = flippedCiphertext
 	return EncryptedText{
-		ciphertext: e.ciphertext,
+		ciphertext: bytes.Join(chunks, nil),
 		iv:         e.iv,
 		key:        e.key,
 	}, nil

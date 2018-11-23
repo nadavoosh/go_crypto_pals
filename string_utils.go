@@ -49,6 +49,7 @@ func FixedXor(b1, b2 []byte) ([]byte, error) {
 	for i := range b {
 		b[i] = b1[i] ^ b2[i]
 	}
+	// fmt.Printf("Diffing %s and %s; got %s\n", b1, b2, b)
 	return b, nil
 }
 

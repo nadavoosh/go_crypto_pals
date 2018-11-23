@@ -28,6 +28,10 @@ func RepeatBytesToLegnth(b []byte, l int) []byte {
 	return bytes.Join(res, nil)
 }
 
+func Chunk(b []byte, chunkSize int) [][]byte {
+	return chunk(b, chunkSize)
+}
+
 func chunk(b []byte, chunkSize int) [][]byte {
 	var chunks [][]byte
 	for i := 0; i < len(b); i += chunkSize {
@@ -206,4 +210,8 @@ func testEq(a, b []byte) bool {
 		}
 	}
 	return true
+}
+
+func TestEq(a, b []byte) bool {
+	return testEq(a, b)
 }

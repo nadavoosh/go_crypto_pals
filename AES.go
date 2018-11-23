@@ -132,6 +132,7 @@ func encryptCBC(d PlainText) (EncryptedText, error) {
 		return EncryptedText{}, err
 	}
 	for _, block := range blocks {
+		// fmt.Printf("encrypting ----- block %d is %s\n", i, block)
 		cipher = encryptSingleBlock(c, FlexibleXor(block, cipher))
 		e.ciphertext = append(e.ciphertext, cipher...)
 
@@ -156,6 +157,7 @@ func decryptCBC(e EncryptedText) (PlainText, error) {
 			return d, err
 		}
 		d.plaintext = append(d.plaintext, plain...)
+		// fmt.Printf("decrypting ----- block %d is %s\n", i, plain)
 		priorCiphertext = block
 	}
 	return d, nil
@@ -210,4 +212,12 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 		i++
 	}
 	return 0, nil
+}
+
+func ChunkForAES(b []byte) [][]byte {
+	return chunk(b, aes.BlockSize)
+}
+
+func GetBlankForAES() []byte {
+	return bytes.Repeat(ByteA, aes.BlockSize)
 }

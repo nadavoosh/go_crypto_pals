@@ -203,7 +203,7 @@ func TestPaddingValidation(t *testing.T) {
 	}
 }
 
-func TestCBCBitflipping(t *testing.T) {
+func TestAdminEscape(t *testing.T) {
 	in := []byte(";admin=true;asdf=asdf")
 	userData, err := EncryptUserData(in)
 	if err != nil {
@@ -218,12 +218,30 @@ func TestCBCBitflipping(t *testing.T) {
 	if admin {
 		t.Errorf("DetectAdminString incorrectly detected the admin string for: %s", in)
 	}
-	b, err := BitflipForAdmin(in, userData)
+}
+func TestFlipBitForAdmin(t *testing.T) {
+	in := GetBlankForAES()
+	flipped := FlipBitsToHide(FlipBitsToHide(in))
+	if !TestEq(flipped, in) {
+		t.Errorf("FlipBitForAdmin didn't undo itself: got %s, want %s", flipped, in)
+	}
+}
+
+func TestCBCBitflipping(t *testing.T) {
+	// in := GetBlankForAES()
+	in := []byte(";admin=true")
+	flipped := FlipBitsToHide(in)
+	userData, err := EncryptUserData(append(flipped, flipped...))
 	if err != nil {
-		t.Errorf("BitflipForAdmin threw an error: %s", err)
+		t.Errorf("EncryptUserData threw an error: %s", err)
 		return
 	}
-	admin, err = DetectAdminString(b)
+	b, err := ModifyCiphertextForAdmin(userData)
+	if err != nil {
+		t.Errorf("ModifyCiphertextForAdmin threw an error: %s", err)
+		return
+	}
+	admin, err := DetectAdminString(b)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return
