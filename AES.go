@@ -218,6 +218,6 @@ func ChunkForAES(b []byte) [][]byte {
 	return chunk(b, aes.BlockSize)
 }
 
-func GetBlankForAES() []byte {
+func AByteBlock() []byte {
 	return bytes.Repeat(ByteA, aes.BlockSize)
 }

@@ -74,7 +74,7 @@ func DetectAdminString(e EncryptedText) (bool, error) {
 }
 
 func FlipBitsToHide(block []byte) []byte {
-	return FlexibleXor(block, GetBlankForAES())
+	return FlexibleXor(block, AByteBlock())
 }
 
 func ModifyCiphertextForAdmin(e EncryptedText) (EncryptedText, error) {

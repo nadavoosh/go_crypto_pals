@@ -220,7 +220,7 @@ func TestAdminEscape(t *testing.T) {
 	}
 }
 func TestFlipBitForAdmin(t *testing.T) {
-	in := GetBlankForAES()
+	in := AByteBlock()
 	flipped := FlipBitsToHide(FlipBitsToHide(in))
 	if !TestEq(flipped, in) {
 		t.Errorf("FlipBitForAdmin didn't undo itself: got %s, want %s", flipped, in)
