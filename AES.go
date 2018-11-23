@@ -124,7 +124,7 @@ func DetectECBMode(lines []string) ([]HexEncoded, error) {
 }
 
 func encryptCBC(d PlainText) (EncryptedText, error) {
-	e := EncryptedText{key: d.key}
+	e := EncryptedText{key: d.key, iv: d.iv}
 	blocks := chunk(d.plaintext, aes.BlockSize)
 	cipher := d.iv
 	c, err := aes.NewCipher(d.key)

@@ -204,4 +204,31 @@ func TestPaddingValidation(t *testing.T) {
 }
 
 func TestCBCBitflipping(t *testing.T) {
+	in := []byte(";admin=true;asdf=asdf")
+	userData, err := EncryptUserData(in)
+	if err != nil {
+		t.Errorf("EncryptUserData(f) threw an error: %s", err)
+		return
+	}
+	admin, err := DetectAdminString(userData)
+	if err != nil {
+		t.Errorf("DetectAdminString(f) threw an error: %s", err)
+		return
+	}
+	if admin {
+		t.Errorf("DetectAdminString incorrectly detected the admin string for: %s", in)
+	}
+	b, err := BitflipForAdmin(in, userData)
+	if err != nil {
+		t.Errorf("BitflipForAdmin threw an error: %s", err)
+		return
+	}
+	admin, err = DetectAdminString(b)
+	if err != nil {
+		t.Errorf("DetectAdminString(f) threw an error: %s", err)
+		return
+	}
+	if !admin {
+		t.Errorf("DetectAdminString incorrectly missed the admin string for: %s", in)
+	}
 }

@@ -43,7 +43,7 @@ func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map
 	return m, nil
 }
 
-func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
+func GetPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	// Encrypt 3 * blocksize bytes and find the (first) ciphertext block that is repeated. This is likely our block, encrypted.
 	c, err := f(bytes.Repeat(ByteA, 3*blocksize))
 	if err != nil {
@@ -102,7 +102,7 @@ func DecryptOracle(f EncryptionFn) ([]byte, error) {
 	}
 	var nPlain []byte
 	// handle any prepended blocks:
-	paddingLen, blocksToSkip, err := getPaddingLength(f, blocksize)
+	paddingLen, blocksToSkip, err := GetPaddingLength(f, blocksize)
 	if err != nil {
 		return nil, err
 	}
