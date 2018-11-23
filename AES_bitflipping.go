@@ -77,12 +77,10 @@ func FlipBitsToHide(block []byte) []byte {
 	return FlexibleXor(block, AByteBlock())
 }
 
-func ModifyCiphertextForAdmin(e EncryptedText) (EncryptedText, error) {
-	chunks := ChunkForAES(e.ciphertext)
+func ModifyCiphertextForAdmin(ciphertext []byte) ([]byte, error) {
+	chunks := ChunkForAES(ciphertext)
 	chunkToFlip := 2 // TODO: calculate this value, by figuring out the length of prepended bytes
 	flippedCiphertext := FlipBitsToHide(chunks[chunkToFlip])
 	chunks[chunkToFlip] = flippedCiphertext
-	ret := e
-	ret.ciphertext =bytes.Join(chunks, nil)
-	return ret, nil
+	return bytes.Join(chunks, nil), nil
 }

@@ -235,12 +235,14 @@ func TestCBCBitflipping(t *testing.T) {
 		t.Errorf("EncryptUserData threw an error: %s", err)
 		return
 	}
-	b, err := ModifyCiphertextForAdmin(userData)
+	b, err := ModifyCiphertextForAdmin(userData.ciphertext)
 	if err != nil {
 		t.Errorf("ModifyCiphertextForAdmin threw an error: %s", err)
 		return
 	}
-	admin, err := DetectAdminString(b)
+	c := userData
+	c.ciphertext = b
+	admin, err := DetectAdminString(c)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return
