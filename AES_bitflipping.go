@@ -20,7 +20,6 @@ func EncryptUserData(input []byte) (EncryptedText, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
 	plaintext := append(prepend, append(escape(string(input)), after...)...)
-	// fmt.Printf("plaintext is %s\n", plaintext)
 	return Encrypt(CBC, PlainText{
 		plaintext: plaintext,
 		key:       FixedKey,
@@ -80,7 +79,7 @@ func FlipBitsToHide(block []byte) []byte {
 
 func ModifyCiphertextForAdmin(e EncryptedText) (EncryptedText, error) {
 	chunks := ChunkForAES(e.ciphertext)
-	chunkToFlip := 2 // TODO: calculate this value!
+	chunkToFlip := 2 // TODO: calculate this value, by figuring out the length of prepended bytes
 	flippedCiphertext := FlipBitsToHide(chunks[chunkToFlip])
 	chunks[chunkToFlip] = flippedCiphertext
 	return EncryptedText{
