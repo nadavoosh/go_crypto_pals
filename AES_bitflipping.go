@@ -80,7 +80,7 @@ func FlipBitsToHide(block []byte) []byte {
 
 func ModifyCiphertextForAdmin(e EncryptedText) (EncryptedText, error) {
 	chunks := ChunkForAES(e.ciphertext)
-	chunkToFlip := 2
+	chunkToFlip := 2 // TODO: calculate this value!
 	flippedCiphertext := FlipBitsToHide(chunks[chunkToFlip])
 	chunks[chunkToFlip] = flippedCiphertext
 	return EncryptedText{

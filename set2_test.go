@@ -228,7 +228,6 @@ func TestFlipBitForAdmin(t *testing.T) {
 }
 
 func TestCBCBitflipping(t *testing.T) {
-	// in := GetBlankForAES()
 	in := []byte(";admin=true")
 	flipped := FlipBitsToHide(in)
 	userData, err := EncryptUserData(append(flipped, flipped...))
