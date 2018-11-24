@@ -5,15 +5,20 @@ import (
 )
 
 type EncryptionFn func(plain []byte) (EncryptedText, error)
+type AESOracleMode int
+const (
+	ECBAppend AESOracleMode = 0
+	CBCPadding AESOracleMode = 1
+)
 type EncryptionOracle struct {
 	encrypt EncryptionFn
-	mode    AESMode
+	mode    AESOracleMode
 }
 
 // Decrypt decrypts fixed text that is appended to the plaintext input to fixed-key EncryptionFn
 func (o EncryptionOracle) Decrypt() ([]byte, error) {
 	switch o.mode {
-	case ECB:
+	case ECBAppend:
 		return o.decryptECB()
 		// case CBC:
 		// return o.decryptCCB()

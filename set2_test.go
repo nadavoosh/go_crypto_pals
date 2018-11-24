@@ -119,7 +119,7 @@ func TestDecryptOracle(t *testing.T) {
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
-	oracle := EncryptionOracle{encrypt: getEncryptionFunction(parsed), mode: ECB}
+	oracle := EncryptionOracle{encrypt: getEncryptionFunction(parsed), mode: ECBAppend}
 	plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracle(f) threw an error: %s", err)
@@ -180,7 +180,7 @@ func TestDecryptOracleHarder(t *testing.T) {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 		return
 	}
-	oracle := EncryptionOracle{encrypt: getEncryptionFunctionHarder(parsed), mode: ECB}
+	oracle := EncryptionOracle{encrypt: getEncryptionFunctionHarder(parsed), mode: ECBAppend}
 	plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracleHarder(f) threw an error: %s", err)
