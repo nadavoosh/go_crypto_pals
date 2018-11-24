@@ -19,10 +19,8 @@ func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
 	d := PlainText{plaintext: b, key: key}
 	switch mode {
 	case ECB:
-		// fmt.Printf("Encrypting with ECB Mode\n")
 		return Encrypt(ECB, d)
 	case CBC:
-		// fmt.Printf("Encrypting with CBC Mode\n")
 		return Encrypt(CBC, d)
 	default:
 		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)

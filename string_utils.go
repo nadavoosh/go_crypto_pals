@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -33,9 +32,6 @@ func HexToBase64(h HexEncoded) string {
 
 // HexFixedXor takes two equal-length hex strings and produces their XOR combination.
 func HexFixedXor(hexString1, hexString2 HexEncoded) (string, error) {
-	if len(hexString1.hexString) != len(hexString2.hexString) {
-		return "", errors.New("FixedXor requires hex strings of equal length")
-	}
 	b, err := FixedXor(hexString1.getBytes(), hexString2.getBytes())
 	return fmt.Sprintf("%x", b), err
 }
@@ -49,22 +45,7 @@ func FixedXor(b1, b2 []byte) ([]byte, error) {
 	for i := range b {
 		b[i] = b1[i] ^ b2[i]
 	}
-	// fmt.Printf("Diffing %s and %s; got %s\n", b1, b2, b)
 	return b, nil
-}
-
-func Min(x, y int) int {
-	if x > y {
-		return y
-	}
-	return x
-}
-
-func Max(x, y int) int {
-	if x > y {
-		return x
-	}
-	return y
 }
 
 func FlexibleXor(b1, b2 []byte) []byte {
