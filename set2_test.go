@@ -92,15 +92,19 @@ func TestEncryptCBC(t *testing.T) {
 	}
 }
 
-func TestEncryptionOracle(t *testing.T) {
+func TestNewEncryptor(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
 	mode := ECB
 	if rand.Float64() < float64(0.5) {
 		mode = CBC
 	}
-	plaintext, err := EncryptionOracle([]byte(FunkyMusic), mode)
+	e, err := NewEncryptor([]byte(FunkyMusic), mode)
 	if err != nil {
-		t.Errorf("EncryptionOracle(%q) threw an error: %s", FunkyMusic, err)
+		t.Errorf("NewEncryptor(%q) threw an error: %s", FunkyMusic, err)
+	}
+	plaintext, err := e.Encrypt()
+	if err != nil {
+		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", FunkyMusic, err)
 	}
 	guessed := GuessAESMode(plaintext)
 	if guessed != mode {
@@ -115,8 +119,8 @@ func TestDecryptOracle(t *testing.T) {
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
-	f := getEncryptionFunction(parsed)
-	plaintext, err := DecryptOracle(f)
+	oracle := EncryptionOracle{encrypt: getEncryptionFunction(parsed), mode: ECB}
+	plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracle(f) threw an error: %s", err)
 	}
@@ -176,8 +180,8 @@ func TestDecryptOracleHarder(t *testing.T) {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 		return
 	}
-	f := getEncryptionFunctionHarder(parsed)
-	plaintext, err := DecryptOracle(f)
+	oracle := EncryptionOracle{encrypt: getEncryptionFunctionHarder(parsed), mode: ECB}
+	plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracleHarder(f) threw an error: %s", err)
 		return

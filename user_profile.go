@@ -36,12 +36,6 @@ func sortStringMap(m map[string]string) []string {
 }
 
 func DumpCookie(m map[string]string) string {
-	// var cookie []string
-	// // To store the keys in slice in sorted order
-	// for _, k := range sortStringMap(m) {
-	// 	cookie = append(cookie, fmt.Sprintf("%s=%s", k, m[k]))
-	// }
-	// return strings.Join(cookie, "&")
 	return fmt.Sprintf("email=%s&uid=%s&role=%s", m["email"], m["uid"], m["role"])
 }
 

@@ -6,25 +6,9 @@ import (
 )
 
 type EncryptionFn func(plain []byte) (EncryptedText, error)
-
-func EncryptionOracle(plain []byte, mode AESMode) (EncryptedText, error) {
-	b, err := addRandomBytes(plain)
-	if err != nil {
-		return EncryptedText{}, err
-	}
-	key, err := generateRandomBlock()
-	if err != nil {
-		return EncryptedText{}, err
-	}
-	d := PlainText{plaintext: b, key: key}
-	switch mode {
-	case ECB:
-		return Encrypt(ECB, d)
-	case CBC:
-		return Encrypt(CBC, d)
-	default:
-		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
-	}
+type EncryptionOracle struct {
+	encrypt EncryptionFn
+	mode    AESMode
 }
 
 func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
@@ -41,7 +25,7 @@ func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map
 	return m, nil
 }
 
-func GetPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
+func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	// Encrypt 3 * blocksize bytes and find the (first) ciphertext block that is repeated. This is likely our block, encrypted.
 	c, err := f(bytes.Repeat(ByteA, 3*blocksize))
 	if err != nil {
@@ -81,8 +65,20 @@ func GetPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	return 0, 0, fmt.Errorf("Could not create a third identical ciphertext block, something went wrong")
 }
 
-// DecryptOracle decrypts fixed text that is appended to the plaintext input to fixed-key EncryptionFn
-func DecryptOracle(f EncryptionFn) ([]byte, error) {
+// Decrypt decrypts fixed text that is appended to the plaintext input to fixed-key EncryptionFn
+func (o EncryptionOracle) Decrypt() ([]byte, error) {
+	switch o.mode {
+	case ECB:
+		return o.decryptECB()
+		// case CBC:
+		// return o.decryptCCB()
+	}
+	return nil, fmt.Errorf("Mode %d unknown", o.mode)
+
+}
+
+func (o EncryptionOracle) decryptECB() ([]byte, error) {
+	f := o.encrypt
 	blocksize, err := inferBlocksize(f)
 	if err != nil {
 		return nil, err
@@ -100,7 +96,7 @@ func DecryptOracle(f EncryptionFn) ([]byte, error) {
 	}
 	var nPlain []byte
 	// handle any prepended blocks:
-	paddingLen, blocksToSkip, err := GetPaddingLength(f, blocksize)
+	paddingLen, blocksToSkip, err := getPaddingLength(f, blocksize)
 	if err != nil {
 		return nil, err
 	}

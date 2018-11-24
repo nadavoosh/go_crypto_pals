@@ -217,3 +217,35 @@ func ChunkForAES(b []byte) [][]byte {
 func AByteBlock() []byte {
 	return bytes.Repeat(ByteA, aes.BlockSize)
 }
+
+type Encryptor struct {
+	mode      AESMode
+	key       []byte
+	plaintext []byte
+}
+
+func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
+	b, err := addRandomBytes(plain)
+	if err != nil {
+		return Encryptor{}, err
+	}
+	key, err := generateRandomBlock()
+	if err != nil {
+		return Encryptor{}, err
+	}
+	return Encryptor{mode: mode, plaintext: b, key: key}, nil
+}
+
+func (o Encryptor) getPlaintext() PlainText {
+	return PlainText{plaintext: o.plaintext, key: o.key}
+}
+
+func (o Encryptor) Encrypt() (EncryptedText, error) {
+	switch o.mode {
+	case ECB:
+		return Encrypt(ECB, o.getPlaintext())
+	case CBC:
+		return Encrypt(CBC, o.getPlaintext())
+	}
+	return EncryptedText{}, fmt.Errorf("Mode %d unknown", o.mode)
+}
