@@ -5,12 +5,6 @@ import (
 	"fmt"
 )
 
-type EncryptionFn func(plain []byte) (EncryptedText, error)
-type EncryptionOracle struct {
-	encrypt EncryptionFn
-	mode    AESMode
-}
-
 func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
 	m := make(map[string]byte)
 	for i := byte(0); i < 255; i++ {
@@ -63,18 +57,6 @@ func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 		}
 	}
 	return 0, 0, fmt.Errorf("Could not create a third identical ciphertext block, something went wrong")
-}
-
-// Decrypt decrypts fixed text that is appended to the plaintext input to fixed-key EncryptionFn
-func (o EncryptionOracle) Decrypt() ([]byte, error) {
-	switch o.mode {
-	case ECB:
-		return o.decryptECB()
-		// case CBC:
-		// return o.decryptCCB()
-	}
-	return nil, fmt.Errorf("Mode %d unknown", o.mode)
-
 }
 
 func (o EncryptionOracle) decryptECB() ([]byte, error) {

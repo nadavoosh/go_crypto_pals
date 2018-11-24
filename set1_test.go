@@ -114,7 +114,7 @@ func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 	}
 	key := "YELLOW SUBMARINE"
 	decoded, err := ParseBase64(strings.Join(lines, ""))
-	got, err := DecryptECB(EncryptedText{ciphertext: decoded, key: []byte(key)})
+	got, err := decryptECB(EncryptedText{ciphertext: decoded, key: []byte(key)})
 	if err != nil {
 		t.Errorf("Decrypt_AES_ECB_b64(%q) threw an error: %s", decoded, err)
 	}
@@ -130,18 +130,24 @@ func TestDetectECBModeFromFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("ScanFile(%q) threw an error: %s", filename, err)
 	}
-	got, err := DetectECBMode(lines)
+	var ECBs []HexEncoded
+	for _, l := range lines {
+		h := HexEncoded{hexString: l}
+		if smellsOfECB(h.getBytes()) {
+			ECBs = append(ECBs, h)
+		}
+	}
 	if err != nil {
 		t.Errorf("DetectECBMode(%q) threw an error: %s", filename, err)
 	}
-	if len(got) == 0 {
+	if len(ECBs) == 0 {
 		t.Errorf("DetectECBMode(%q) returned 0 results, want 1", filename)
-	} else if len(got) > 1 {
-		t.Errorf("DetectECBMode(%q) returned %d results, want 1", filename, len(got))
+	} else if len(ECBs) > 1 {
+		t.Errorf("DetectECBMode(%q) returned %d results, want 1", filename, len(ECBs))
 
 	} else {
-		if got[0].hexString != want {
-			t.Errorf("DetectECBMode(%q) == %q, want %q", filename, got, want)
+		if ECBs[0].hexString != want {
+			t.Errorf("DetectECBMode(%q) == %q, want %q", filename, ECBs, want)
 		}
 	}
 }

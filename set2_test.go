@@ -10,14 +10,14 @@ import (
 func getEncryptionFunction(a []byte) func(plain []byte) (EncryptedText, error) {
 	return func(plain []byte) (EncryptedText, error) {
 		d := PlainText{plaintext: append(plain, a...), key: FixedKey}
-		return EncryptECB(d)
+		return encryptECB(d)
 	}
 }
 
 func getEncryptionFunctionHarder(a []byte) func(plain []byte) (EncryptedText, error) {
 	return func(plain []byte) (EncryptedText, error) {
 		d := PlainText{plaintext: append(append(FixedBytes, plain...), a...), key: FixedKey}
-		return EncryptECB(d)
+		return encryptECB(d)
 	}
 }
 
