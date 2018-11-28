@@ -5,12 +5,6 @@ import (
 	"testing"
 )
 
-func padAndEncryptOracle() EncryptionFn {
-	return func(_ []byte) (EncryptedText, error) {
-		return padAndEncryptFromSet()
-	}
-}
-
 func padAndEncryptFromSet() (EncryptedText, error) {
 	strings := []string{
 		"MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
@@ -39,7 +33,8 @@ func TestCBCPaddingValidation(t *testing.T) {
 		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
 		return
 	}
-	valid, err := decryptAndValidatePadding(d)
+	decryptAndValidatePadding := getValidationFnForOracle(d.key)
+	valid, err := decryptAndValidatePadding(d.ciphertext, d.iv)
 	if err != nil {
 		t.Errorf("decryptAndValidatePadding threw an error: %s", err)
 		return
@@ -50,7 +45,12 @@ func TestCBCPaddingValidation(t *testing.T) {
 }
 
 func TestCBCPaddingOracle(t *testing.T) {
-	oracle := EncryptionOracle{encrypt: padAndEncryptOracle(), mode: CBCPadding}
+	encrypt, err := padAndEncryptFromSet()
+	if err != nil {
+		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
+		return
+	}
+	oracle := CBCPaddingOracle{iv: encrypt.iv, ciphertext: encrypt.ciphertext, validationFn: getValidationFnForOracle(encrypt.key)}
 	res, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("oracle.Decrypt(f) threw an error: %s", err)
