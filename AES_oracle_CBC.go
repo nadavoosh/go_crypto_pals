@@ -41,7 +41,7 @@ func (o EncryptionOracle) decryptCBCPadding() ([]byte, error) {
 		finalPlaintext = append(finalPlaintext, next...)
 		prevCipher = chunks[k]
 	}
-	return finalPlaintext, nil
+	return RemovePKCSPadding(finalPlaintext), nil
 }
 func findNextByte(c EncryptedText, block, plaintext []byte, j int) (byte, error) {
 	base := bytes.Repeat([]byte{0}, aes.BlockSize-j)

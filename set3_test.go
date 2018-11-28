@@ -11,7 +11,7 @@ func padAndEncryptOracle() EncryptionFn {
 	}
 }
 
-func padAndEncryptFromSet(n number) (EncryptedText, error) {
+func padAndEncryptFromSet() (EncryptedText, error) {
 	strings := []string{
 		"MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
 		"MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic=",
@@ -25,7 +25,7 @@ func padAndEncryptFromSet(n number) (EncryptedText, error) {
 		"MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93",
 	}
 	// plaintext, err := ParseBase64(strings[rand.Intn(len(strings)-1)])
-	plaintext, err := ParseBase64(strings[n])
+	plaintext, err := ParseBase64(strings[0])
 	if err != nil {
 		return EncryptedText{}, err
 	}
@@ -56,8 +56,8 @@ func TestCBCPaddingOracle(t *testing.T) {
 		t.Errorf("oracle.Decrypt(f) threw an error: %s", err)
 		return
 	}
-	if string(res) != "test" {
-		t.Errorf("oracle.Decrypt failed to validate: %s", res)
+	want := "000000Now that the party is jumping"
+	if string(res) != want {
+		t.Errorf("oracle.Decrypt returned: %s, want %s", res, want)
 	}
-	// TODO test result of decryption
 }
