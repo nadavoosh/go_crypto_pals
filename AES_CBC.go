@@ -1,10 +1,14 @@
 package cryptopals
 
-import "crypto/aes"
+import (
+	"crypto/aes"
+	"fmt"
+)
 
 func encryptCBC(d PlainText) (EncryptedText, error) {
 	e := EncryptedText{key: d.key, iv: d.iv}
-	blocks := chunk(d.plaintext, aes.BlockSize)
+	padded := PKCSPadding(d.plaintext, aes.BlockSize)
+	blocks := chunk(padded, aes.BlockSize)
 	cipher := d.iv
 	c, err := aes.NewCipher(d.key)
 	if err != nil {
@@ -13,7 +17,6 @@ func encryptCBC(d PlainText) (EncryptedText, error) {
 	for _, block := range blocks {
 		cipher = encryptSingleBlock(c, FlexibleXor(block, cipher))
 		e.ciphertext = append(e.ciphertext, cipher...)
-
 	}
 	return e, nil
 }
@@ -37,5 +40,9 @@ func decryptCBC(e EncryptedText) (PlainText, error) {
 		d.plaintext = append(d.plaintext, plain...)
 		priorCiphertext = block
 	}
+	if !ValidatePKCS(d.plaintext) {
+		return d, fmt.Errorf("Invalid Padding")
+	}
+	d.plaintext = RemovePKCSPadding(d.plaintext)
 	return d, nil
 }

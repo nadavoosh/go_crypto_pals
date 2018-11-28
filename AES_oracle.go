@@ -6,10 +6,12 @@ import (
 
 type EncryptionFn func(plain []byte) (EncryptedText, error)
 type AESOracleMode int
+
 const (
-	ECBAppend AESOracleMode = 0
+	ECBAppend  AESOracleMode = 0
 	CBCPadding AESOracleMode = 1
 )
+
 type EncryptionOracle struct {
 	encrypt EncryptionFn
 	mode    AESOracleMode
@@ -19,9 +21,9 @@ type EncryptionOracle struct {
 func (o EncryptionOracle) Decrypt() ([]byte, error) {
 	switch o.mode {
 	case ECBAppend:
-		return o.decryptECB()
-		// case CBC:
-		// return o.decryptCCB()
+		return o.decryptECBAppend()
+	case CBCPadding:
+		return o.decryptCBCPadding()
 	}
 	return nil, fmt.Errorf("Mode %d unknown", o.mode)
 

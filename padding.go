@@ -34,6 +34,9 @@ func ValidatePKCS(b []byte) bool {
 		return false
 	}
 	claimedPaddingCount := int(b[len(b)-1])
+	if len(b) < claimedPaddingCount || claimedPaddingCount == 0 {
+		return false
+	}
 	for j := len(b) - claimedPaddingCount; j < len(b)-1; j++ {
 		if int(b[j]) != claimedPaddingCount {
 			return false

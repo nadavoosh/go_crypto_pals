@@ -1,14 +1,63 @@
 package cryptopals
 
 import (
+	// "math/rand"
 	"testing"
 )
 
-func TestCBCPadding(t *testing.T) {
-	in := HexEncoded{hexString: "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"}
-	want := "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
-	got := HexToBase64(in)
-	if got != want {
-		t.Errorf("ToBase64(%q) == %q, want %q", in, got, want)
+func padAndEncryptOracle() EncryptionFn {
+	return func(_ []byte) (EncryptedText, error) {
+		return padAndEncryptFromSet()
 	}
+}
+
+func padAndEncryptFromSet(n number) (EncryptedText, error) {
+	strings := []string{
+		"MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
+		"MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic=",
+		"MDAwMDAyUXVpY2sgdG8gdGhlIHBvaW50LCB0byB0aGUgcG9pbnQsIG5vIGZha2luZw==",
+		"MDAwMDAzQ29va2luZyBNQydzIGxpa2UgYSBwb3VuZCBvZiBiYWNvbg==",
+		"MDAwMDA0QnVybmluZyAnZW0sIGlmIHlvdSBhaW4ndCBxdWljayBhbmQgbmltYmxl",
+		"MDAwMDA1SSBnbyBjcmF6eSB3aGVuIEkgaGVhciBhIGN5bWJhbA==",
+		"MDAwMDA2QW5kIGEgaGlnaCBoYXQgd2l0aCBhIHNvdXBlZCB1cCB0ZW1wbw==",
+		"MDAwMDA3SSdtIG9uIGEgcm9sbCwgaXQncyB0aW1lIHRvIGdvIHNvbG8=",
+		"MDAwMDA4b2xsaW4nIGluIG15IGZpdmUgcG9pbnQgb2g=",
+		"MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93",
+	}
+	// plaintext, err := ParseBase64(strings[rand.Intn(len(strings)-1)])
+	plaintext, err := ParseBase64(strings[n])
+	if err != nil {
+		return EncryptedText{}, err
+	}
+	d := PlainText{plaintext: []byte(plaintext), key: FixedKey, iv: GenerateKey()}
+	return Encrypt(CBC, d)
+}
+
+func TestCBCPaddingValidation(t *testing.T) {
+	d, err := padAndEncryptFromSet()
+	if err != nil {
+		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
+		return
+	}
+	valid, err := decryptAndValidatePadding(d)
+	if err != nil {
+		t.Errorf("decryptAndValidatePadding threw an error: %s", err)
+		return
+	}
+	if !valid {
+		t.Errorf("decryptAndValidatePadding failed to validate: %s", d.ciphertext)
+	}
+}
+
+func TestCBCPaddingOracle(t *testing.T) {
+	oracle := EncryptionOracle{encrypt: padAndEncryptOracle(), mode: CBCPadding}
+	res, err := oracle.Decrypt()
+	if err != nil {
+		t.Errorf("oracle.Decrypt(f) threw an error: %s", err)
+		return
+	}
+	if string(res) != "test" {
+		t.Errorf("oracle.Decrypt failed to validate: %s", res)
+	}
+	// TODO test result of decryption
 }

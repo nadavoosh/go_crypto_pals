@@ -7,17 +7,17 @@ import (
 	"time"
 )
 
-func getEncryptionFunction(a []byte) func(plain []byte) (EncryptedText, error) {
+func appendAndEncrypt(a []byte) EncryptionFn {
 	return func(plain []byte) (EncryptedText, error) {
 		d := PlainText{plaintext: append(plain, a...), key: FixedKey}
-		return encryptECB(d)
+		return Encrypt(ECB, d)
 	}
 }
 
-func getEncryptionFunctionHarder(a []byte) func(plain []byte) (EncryptedText, error) {
+func prependAndAppendAndEncrypt(a []byte) EncryptionFn {
 	return func(plain []byte) (EncryptedText, error) {
 		d := PlainText{plaintext: append(append(FixedBytes, plain...), a...), key: FixedKey}
-		return encryptECB(d)
+		return Encrypt(ECB, d)
 	}
 }
 
@@ -59,8 +59,7 @@ func TestEncryptECB(t *testing.T) {
 func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
-	iv := RepeatBytesToLegnth([]byte{0}, aes.BlockSize)
-	want := string(FlexibleXor([]byte(in), iv))
+	iv := RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
 	c, err := Encrypt(CBC, PlainText{plaintext: []byte(in), key: key, iv: iv})
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
@@ -70,8 +69,8 @@ func TestEncryptAESCBC(t *testing.T) {
 	if err != nil {
 		t.Errorf("decryptCBC(%q) threw an error: %s", in2, err)
 	}
-	if string(got.plaintext) != want {
-		t.Errorf("decryptCBC(%q) == %q, want %q", in, string(got.plaintext), want)
+	if string(got.plaintext) != in {
+		t.Errorf("decryptCBC(%q) == %q, want %q", in, string(got.plaintext), in)
 	}
 }
 
@@ -87,7 +86,7 @@ func TestEncryptCBC(t *testing.T) {
 	if err != nil {
 		t.Errorf("decryptCBC(%q) threw an error: %s", in, err)
 	}
-	if string(got.plaintext) != FunkyMusic {
+	if !TestEq(got.plaintext, RemovePKCSPadding([]byte(FunkyMusic))) {
 		t.Errorf("encryptCBC(%q) == %q, want %q", in, got, FunkyMusic)
 	}
 }
@@ -119,7 +118,7 @@ func TestDecryptOracle(t *testing.T) {
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
-	oracle := EncryptionOracle{encrypt: getEncryptionFunction(parsed), mode: ECBAppend}
+	oracle := EncryptionOracle{encrypt: appendAndEncrypt(parsed), mode: ECBAppend}
 	plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracle(f) threw an error: %s", err)
@@ -180,7 +179,7 @@ func TestDecryptOracleHarder(t *testing.T) {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 		return
 	}
-	oracle := EncryptionOracle{encrypt: getEncryptionFunctionHarder(parsed), mode: ECBAppend}
+	oracle := EncryptionOracle{encrypt: prependAndAppendAndEncrypt(parsed), mode: ECBAppend}
 	plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracleHarder(f) threw an error: %s", err)

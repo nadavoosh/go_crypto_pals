@@ -59,7 +59,7 @@ func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	return 0, 0, fmt.Errorf("Could not create a third identical ciphertext block, something went wrong")
 }
 
-func (o EncryptionOracle) decryptECB() ([]byte, error) {
+func (o EncryptionOracle) decryptECBAppend() ([]byte, error) {
 	f := o.encrypt
 	blocksize, err := inferBlocksize(f)
 	if err != nil {
