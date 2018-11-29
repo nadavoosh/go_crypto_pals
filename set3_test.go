@@ -61,3 +61,40 @@ func TestCBCPaddingOracle(t *testing.T) {
 		t.Errorf("oracle.Decrypt returned: %s, want %s", res, want)
 	}
 }
+
+func TestCTRCipher(t *testing.T) {
+	cipherterxt, err := ParseBase64("L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==")
+	if err != nil {
+		t.Errorf("ParseBase64 threw an error: %s", err)
+		return
+	}
+	key := []byte("YELLOW SUBMARINE")
+	e := EncryptedText{
+		ciphertext: cipherterxt,
+		key:        key,
+	}
+	p, err := Decrypt(CTC, e)
+	if err != nil {
+		t.Errorf("Decrypt threw an error: %s", err)
+		return
+	}
+	want := "Yo, VIP Let's kick it Ice, Ice, baby Ice, Ice, baby "
+	if string(p.plaintext) != want {
+		t.Errorf("Decrypt returned: %s, want %s", p.plaintext, want)
+		return
+	}
+	d := PlainText{
+		plaintext: []byte(want),
+		key:       key,
+	}
+	c, err := Encrypt(CTC, d)
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+		return
+	}
+	if string(c.ciphertext) != string(cipherterxt) {
+		t.Errorf("Encrypt returned: %s, want %s", c.ciphertext, cipherterxt)
+		return
+	}
+
+}

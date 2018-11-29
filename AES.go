@@ -14,6 +14,7 @@ type AESMode int
 const (
 	ECB AESMode = 0
 	CBC AESMode = 1
+	CTC AESMode = 2
 )
 
 func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
@@ -29,6 +30,8 @@ func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 			d.iv = iv
 		}
 		return encryptCBC(d)
+	case CTC:
+		return encryptCTC(d)
 	default:
 		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
 	}
@@ -47,6 +50,8 @@ func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 			e.iv = iv
 		}
 		return decryptCBC(e)
+	case CTC:
+		return decryptCTC(e)
 	default:
 		return PlainText{}, fmt.Errorf("Mode %d unknown", mode)
 	}

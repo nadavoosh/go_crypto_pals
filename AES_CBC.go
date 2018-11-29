@@ -12,7 +12,7 @@ func encryptCBC(d PlainText) (EncryptedText, error) {
 	cipher := d.iv
 	c, err := aes.NewCipher(d.key)
 	if err != nil {
-		return EncryptedText{}, err
+		return e, err
 	}
 	for _, block := range blocks {
 		cipher = encryptSingleBlock(c, FlexibleXor(block, cipher))
@@ -27,7 +27,7 @@ func decryptCBC(e EncryptedText) (PlainText, error) {
 	priorCiphertext := e.iv
 	c, err := aes.NewCipher(e.key)
 	if err != nil {
-		return PlainText{}, err
+		return d, err
 	}
 	for _, block := range blocks {
 		if err != nil {
