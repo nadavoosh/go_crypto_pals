@@ -69,9 +69,11 @@ func TestCTRCipher(t *testing.T) {
 		return
 	}
 	key := []byte("YELLOW SUBMARINE")
+	nonce := int64(0)
 	e := EncryptedText{
 		ciphertext: cipherterxt,
 		key:        key,
+		nonce:      nonce,
 	}
 	p, err := Decrypt(CTC, e)
 	if err != nil {
@@ -86,6 +88,7 @@ func TestCTRCipher(t *testing.T) {
 	d := PlainText{
 		plaintext: []byte(want),
 		key:       key,
+		nonce:     nonce,
 	}
 	c, err := Encrypt(CTC, d)
 	if err != nil {

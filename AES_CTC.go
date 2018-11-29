@@ -2,23 +2,30 @@ package cryptopals
 
 import (
 	"crypto/aes"
-	"fmt"
+	"encoding/binary"
+	// "fmt"
 )
 
-func getKeystream(key, nonce []byte) ([]byte, error) {
+func int64ToByteArray(i int64) []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(i))
+	return b
+}
+
+func getKeystream(key []byte, nonce, count int64) ([]byte, error) {
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
-	return encryptSingleBlock(c, nonce), nil
+	counter := append(int64ToByteArray(nonce), int64ToByteArray(count)...)
+	return encryptSingleBlock(c, counter), nil
 }
 
 func encryptCTC(d PlainText) (EncryptedText, error) {
 	e := EncryptedText{key: d.key}
 	blocks := chunk(d.plaintext, aes.BlockSize)
 	for i, block := range blocks {
-		nonce := []byte(fmt.Sprintf("\x00\x00\x00\x00\x00\x00\x00\x00%c\x00\x00\x00\x00\x00\x00\x00", i))
-		keystream, err := getKeystream(d.key, nonce)
+		keystream, err := getKeystream(d.key, d.nonce, int64(i))
 		if err != nil {
 			return e, err
 		}
@@ -33,16 +40,13 @@ func decryptCTC(e EncryptedText) (PlainText, error) {
 	d := PlainText{key: e.key}
 	blocks := chunk(e.ciphertext, aes.BlockSize)
 	for i, block := range blocks {
-		nonce := []byte(fmt.Sprintf("\x00\x00\x00\x00\x00\x00\x00\x00%c\x00\x00\x00\x00\x00\x00\x00", i))
 		// fmt.Printf("nonce is %d\n", nonce)
 		// fmt.Printf("key is %s\n", d.key)
-		keystream, err := getKeystream(d.key, nonce)
+		keystream, err := getKeystream(d.key, e.nonce, int64(i))
 		if err != nil {
 			return d, err
 		}
 		trimmedKeystream := keystream[:len(block)]
-		// fmt.Printf("trimmedKeystream is %d\n", trimmedKeystream)
-		// fmt.Printf("block is %d\n", block)
 		plain := FlexibleXor(block, trimmedKeystream)
 		d.plaintext = append(d.plaintext, plain...)
 	}
