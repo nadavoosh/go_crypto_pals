@@ -46,7 +46,7 @@ func (mt *MT19937) Seed(seed int) {
 	for i := uint32(1); i < n; i++ {
 		x[i] = f*(x[i-1]^(x[i-1]>>(w-2))) + i
 	}
-	mt.index = 0
+	mt.index = n
 }
 
 func (mt *MT19937) Uint32() uint32 {
@@ -77,3 +77,12 @@ func (mt *MT19937) twist() {
 	}
 	mt.index = 0
 }
+
+// func SeedFromUint32(y uint32) int {
+// 	y ^= y << l
+// 	y ^= (y << t) & c
+// 	y ^= (y << s) & b
+// 	y ^= (y << u) & d
+// 	y := mt.state[mt.index]
+// 	return y
+// }

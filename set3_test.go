@@ -2,8 +2,10 @@ package cryptopals
 
 import (
 	"fmt"
-	"strings"
+	mathRand "math/rand"
+	"regexp"
 	"testing"
+	"time"
 )
 
 func padAndEncryptFromSet() (EncryptedText, error) {
@@ -189,10 +191,17 @@ func TestBreakCTRStatistically(t *testing.T) {
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
 		}
-		decrypted_string := string(got.plaintext[min_len*i : min_len*(i+1)])
-		actual_trimmed_string := string(actual_bytes[:min_len])
 
-		if strings.ToLower(decrypted_string) != strings.ToLower(actual_trimmed_string) {
+		// Make a Regex to say we only want letters and numbers
+		reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+		if err != nil {
+			t.Errorf("%v", err)
+		}
+
+		decrypted_string := reg.ReplaceAllString(string(got.plaintext[min_len*i:min_len*(i+1)]), "")
+		actual_trimmed_string := reg.ReplaceAllString(string(actual_bytes[:min_len]), "")
+
+		if decrypted_string != actual_trimmed_string {
 			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decrypted_string, actual_trimmed_string)
 		}
 	}
@@ -212,7 +221,18 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 	for i := 0; i < 123; i++ {
 		seededSum += int(m.Uint32())
 	}
-	if seededSum != 270235990540 {
+	if seededSum != 282554711866 {
 		t.Errorf("MersenneTwister seeded sum isn't right: %v\n", seededSum)
 	}
+}
+
+func TestCrackSeed(t *testing.T) {
+	t.Skip()
+	m := NewMersenneTwister()
+	mathRand.Seed(time.Now().UnixNano())
+	x := mathRand.Int31n(10) + 40
+	time.Sleep(time.Duration(x) * time.Second)
+	m.Seed(int(time.Now().Unix()))
+	out := m.Uint32()
+	fmt.Println(out)
 }
