@@ -1,7 +1,7 @@
 package cryptopals
 
 import (
-	// "math/rand"
+	"math/rand"
 	"fmt"
 	"testing"
 )
@@ -117,11 +117,10 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 		return
 	}
 	nonce := int64(0)
-	 // randomly generated:
+	// randomly generated:
 	key := []byte{18, 39, 184, 124, 192, 76, 210, 222, 7, 118, 111, 129, 173, 147, 95, 187}
 	// guessed iteratively by looking at what prints and finding one letter to try next:
 	keystream_guess := []byte{61, 119, 199, 221, 251, 12, 179, 47, 28, 48, 171, 47, 152, 235, 153, 236, 113, 47, 144, 28, 151, 200, 54, 228, 104, 190, 165, 111, 120, 237, 239, 125, 179, 228, 122, 201, 172, 60}
-	
 	for _, plaintext_line := range lines {
 		decoded, err := ParseBase64(plaintext_line)
 		if err != nil {
@@ -140,24 +139,52 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 		plaintext_bytes := FlexibleXor(keystream_guess[:l], c.ciphertext)
 		fmt.Println(plaintext_bytes[l:])
 		fmt.Println(string(plaintext_bytes))
-
 	}
 	return
 }
 
-// func TestBreakCTRStatistically(t *testing.T) {
-// 	filename := "challenges/challenge20.txt"
-// 	decoded, err := ReadBase64File(filename)
-// 	if err != nil {
-// 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
-// 	}
-// 	key := []byte("YELLOW SUBMARINE")
-// 	in := EncryptedText{key: key, ciphertext: decoded, iv: RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
-// 	got, err := decryptCBC(in)
-// 	if err != nil {
-// 		t.Errorf("decryptCBC(%q) threw an error: %s", in, err)
-// 	}
-// 	if !TestEq(got.plaintext, RemovePKCSPadding([]byte(FunkyMusic))) {
-// 		t.Errorf("encryptCBC(%q) == %q, want %q", in, got, FunkyMusic)
-// 	}
-// }
+func TestBreakCTRStatistically(t *testing.T) {
+	filename := "challenges/challenge20.txt"
+	lines, err := ScanFile(filename)
+	if err != nil {
+		t.Errorf("ScanFile threw an error: %s", err)
+		return
+	}
+	actual := []byte{}
+	nonce := int64(0)
+	key := make([]byte, 32) /// long key
+	_, err = rand.Read(key)
+	raw_ciphertexts := [][]byte{}
+	min_len := 100000
+	for _, plaintext_line := range lines {
+		decoded, err := ParseBase64(plaintext_line)
+		actual = append(actual, decoded...)
+		if err != nil {
+			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
+		}
+		d := PlainText{
+			plaintext: decoded,
+			key:       key,
+			nonce:     nonce,
+		}
+		c, err := Encrypt(CTC, d)
+		if err != nil {
+			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
+		}
+		if len(c.ciphertext) < min_len {
+			min_len = len(c.ciphertext)
+		}
+		raw_ciphertexts = append(raw_ciphertexts, c.ciphertext)
+	}
+	ciphertexts := []byte{}
+	for _, ciphertext := range raw_ciphertexts {
+		ciphertexts = append(ciphertexts, ciphertext[:min_len]...)
+	}
+	got, err := DecryptRepeatingKeyXorWithKeysize(ciphertexts, min_len)
+	if err != nil {
+		t.Errorf("DecryptRepeatingKeyXorWithKeysize threw an error: %s", err)
+	}
+	if string(got.plaintext[:min_len]) != string(actual[:min_len]) { // this just tests that the first line decrypted correctly.
+		t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work: %s \n %s", got.plaintext, actual[:min_len])
+	}
+}
