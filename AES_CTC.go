@@ -40,8 +40,6 @@ func decryptCTC(e EncryptedText) (PlainText, error) {
 	d := PlainText{key: e.key}
 	blocks := chunk(e.ciphertext, aes.BlockSize)
 	for i, block := range blocks {
-		// fmt.Printf("nonce is %d\n", nonce)
-		// fmt.Printf("key is %s\n", d.key)
 		keystream, err := getKeystream(d.key, e.nonce, int64(i))
 		if err != nil {
 			return d, err

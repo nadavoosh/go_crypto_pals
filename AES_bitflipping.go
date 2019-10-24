@@ -48,7 +48,6 @@ func splitString(s, sep string) []string {
 func parseString(s string) map[string]string {
 	m := make(map[string]string)
 	st := splitString(s, ";")
-	// fmt.Printf("s is %s\n", s)
 	for _, pair := range st {
 		p := splitString(pair, "=")
 		if len(p) > 1 {
