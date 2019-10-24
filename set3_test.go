@@ -159,10 +159,10 @@ func TestBreakCTRStatistically(t *testing.T) {
 	min_len := 100000
 	for _, plaintext_line := range lines {
 		decoded, err := ParseBase64(plaintext_line)
-		actual = append(actual, decoded...)
 		if err != nil {
-			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
+			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
 		}
+		actual = append(actual, decoded...)
 		d := PlainText{
 			plaintext: decoded,
 			key:       key,
@@ -185,7 +185,16 @@ func TestBreakCTRStatistically(t *testing.T) {
 	if err != nil {
 		t.Errorf("DecryptRepeatingKeyXorWithKeysize threw an error: %s", err)
 	}
-	if string(got.plaintext[:min_len]) != string(actual[:min_len]) { // this just tests that the first line decrypted correctly.
-		t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work: \n%s\n%s", got.plaintext[:min_len], actual[:min_len])
+	for i, line := range lines {
+		actual_bytes, err := ParseBase64(line)
+		if err != nil {
+			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
+		}
+		decrypted_string := string(got.plaintext[min_len*i : min_len*(i+1)])
+		actual_trimmed_string := string(actual_bytes[:min_len])
+
+		if decrypted_string != actual_trimmed_string {
+			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decrypted_string, actual_trimmed_string)
+		}
 	}
 }
