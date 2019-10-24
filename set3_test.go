@@ -1,8 +1,8 @@
 package cryptopals
 
 import (
-	"math/rand"
 	"fmt"
+	"math/rand"
 	"testing"
 )
 
@@ -110,6 +110,7 @@ func min(a, b int) int {
 }
 
 func TestBreakCTRWithGuessing(t *testing.T) {
+	t.Skip("Guessing challenge is meant to be run interactively & iteratively.")
 	filename := "challenges/challenge19.txt"
 	lines, err := ScanFile(filename)
 	if err != nil {
@@ -185,6 +186,6 @@ func TestBreakCTRStatistically(t *testing.T) {
 		t.Errorf("DecryptRepeatingKeyXorWithKeysize threw an error: %s", err)
 	}
 	if string(got.plaintext[:min_len]) != string(actual[:min_len]) { // this just tests that the first line decrypted correctly.
-		t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work: %s \n %s", got.plaintext, actual[:min_len])
+		t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work: \n%s\n%s", got.plaintext[:min_len], actual[:min_len])
 	}
 }
