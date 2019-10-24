@@ -2,8 +2,8 @@ package cryptopals
 
 import (
 	"fmt"
-	"math/rand"
 	"testing"
+	"strings"
 )
 
 func padAndEncryptFromSet() (EncryptedText, error) {
@@ -153,8 +153,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 	}
 	actual := []byte{}
 	nonce := int64(0)
-	key := make([]byte, 32) /// long key
-	_, err = rand.Read(key)
+	key := GenerateKey()
 	raw_ciphertexts := [][]byte{}
 	min_len := 100000
 	for _, plaintext_line := range lines {
@@ -193,8 +192,12 @@ func TestBreakCTRStatistically(t *testing.T) {
 		decrypted_string := string(got.plaintext[min_len*i : min_len*(i+1)])
 		actual_trimmed_string := string(actual_bytes[:min_len])
 
-		if decrypted_string != actual_trimmed_string {
+		if strings.ToLower(decrypted_string) != strings.ToLower(actual_trimmed_string) {
 			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decrypted_string, actual_trimmed_string)
 		}
 	}
+}
+
+func TestImplementMersenneTwisterRNG(t *testing.T) {
+
 }
