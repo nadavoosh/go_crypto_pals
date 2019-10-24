@@ -2,8 +2,8 @@ package cryptopals
 
 import (
 	"fmt"
-	"testing"
 	"strings"
+	"testing"
 )
 
 func padAndEncryptFromSet() (EncryptedText, error) {
@@ -199,5 +199,20 @@ func TestBreakCTRStatistically(t *testing.T) {
 }
 
 func TestImplementMersenneTwisterRNG(t *testing.T) {
-
+	m := NewMersenneTwister()
+	unseededSum := 0
+	for i := 0; i < 123; i++ {
+		unseededSum += int(m.Uint32())
+	}
+	if unseededSum != 268571260341 {
+		t.Errorf("MersenneTwister unseeded sum isn't right: %v\n", unseededSum)
+	}
+	m.Seed(523)
+	seededSum := 0
+	for i := 0; i < 123; i++ {
+		seededSum += int(m.Uint32())
+	}
+	if seededSum != 270235990540 {
+		t.Errorf("MersenneTwister seeded sum isn't right: %v\n", seededSum)
+	}
 }
