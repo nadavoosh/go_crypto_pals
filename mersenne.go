@@ -1,7 +1,5 @@
 package cryptopals
 
-// import "fmt"
-
 const (
 	w         = 32
 	n         = 624
@@ -42,7 +40,6 @@ func NewMersenneTwister() *MT19937 {
 // Initialize the generator from a seed
 func (mt *MT19937) Seed(seed int) {
 	x := mt.state
-	// fmt.Printf("seeding with %v\n", seed)
 	x[0] = uint32(seed)
 	for i := uint32(1); i < n; i++ {
 		x[i] = f*(x[i-1]^(x[i-1]>>(w-2))) + i

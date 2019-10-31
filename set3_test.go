@@ -268,7 +268,6 @@ func TestCloneMT199937(t *testing.T) {
 		clone.state[i] = Untemper(m.Uint32())
 	}
 	// now the states are the same, but the clone.index is `notSeeded` and m.index is `n`.
-	// set clone.index:
 	clone.index = n
 	for i := 0; i < 2*n; i++ {
 		if clone.Uint32() != m.Uint32() {
