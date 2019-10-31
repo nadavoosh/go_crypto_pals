@@ -48,12 +48,12 @@ func SolveSingleByteXorCipherHex(h HexEncoded) (PlainText, error) {
 func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 	var res PlainText
 	var newScore float64
-	for i := byte(0); i < 255; i++ {
-		t, err := singleByteXor(hBytes, i)
+	for i := 0; i < 256; i++ {
+		t, err := singleByteXor(hBytes, byte(i))
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := PlainText{plaintext: t, CryptoMaterial: CryptoMaterial{key: []byte{i}}}
+		tprime := PlainText{plaintext: t, CryptoMaterial: CryptoMaterial{key: []byte{byte(i)}}}
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime

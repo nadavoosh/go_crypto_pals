@@ -39,6 +39,7 @@ func ValidatePKCS(b []byte) bool {
 	}
 	for j := len(b) - claimedPaddingCount; j < len(b)-1; j++ {
 		if int(b[j]) != claimedPaddingCount {
+			// fmt.Printf("%v padding invalid\n", b)
 			return false
 		}
 	}
