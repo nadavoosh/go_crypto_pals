@@ -1,7 +1,7 @@
 package cryptopals
 
 import (
-	"bytes"
+	// "bytes"
 	"fmt"
 	mathRand "math/rand"
 	"regexp"
@@ -287,17 +287,11 @@ func TestCloneMT19937(t *testing.T) {
 		}
 	}
 }
-
-func TestEncryptMT19937(t *testing.T) {
+func TestEncryptWithMT19937(t *testing.T) {
 	key := GenerateKey()
-	base := bytes.Repeat(ByteA, 14)
-	original, err := addRandomBytes(base)
-	if err != nil {
-		t.Errorf("addRandomBytes threw an error: %s", err)
-		return
-	}
+	original := GenerateKey()
 	d := PlainText{
-		plaintext: []byte(original),
+		plaintext: original,
 		key:       key,
 	}
 	c, err := Encrypt(MT, d)
@@ -311,8 +305,27 @@ func TestEncryptMT19937(t *testing.T) {
 		return
 	}
 	if string(p.plaintext) != string(original) {
-		t.Errorf("Decrypt didn't work. Got %v, want %v\n", p.plaintext, original)
+		t.Errorf("Decrypt didn't work. Got %s, want %s\n", p.plaintext, original)
 		return
 	}
+}
+
+func TestEncryptMT19937(t *testing.T) {
+	// key := GenerateKey()
+	// base := bytes.Repeat(ByteA, 14)
+	// original, err := addRandomBytes(base)
+	// if err != nil {
+	// 	t.Errorf("addRandomBytes threw an error: %s", err)
+	// 	return
+	// }
+	// d := PlainText{
+	// 	plaintext: []byte(original),
+	// 	key:       key,
+	// }
+	// // _, err := Encrypt(MT, d)
+	// if string(key) != string(key_guess) {
+	// 	t.Errorf("Guessing the MT key from the ciphertext didn't work. Got %v, want %v\n", key_guess, key)
+	// 	return
+	// }
 
 }
