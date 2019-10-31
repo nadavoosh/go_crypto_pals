@@ -6,7 +6,7 @@ import (
 )
 
 func encryptCBC(d PlainText) (EncryptedText, error) {
-	e := EncryptedText{key: d.key, iv: d.iv}
+	e := EncryptedText{CryptoMaterial: CryptoMaterial{key: d.key, iv: d.iv}}
 	padded := PKCSPadding(d.plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	cipher := d.iv
@@ -22,7 +22,7 @@ func encryptCBC(d PlainText) (EncryptedText, error) {
 }
 
 func decryptCBC(e EncryptedText) (PlainText, error) {
-	d := PlainText{key: e.key}
+	d := PlainText{CryptoMaterial: CryptoMaterial{key: e.key}}
 	blocks := chunk(e.ciphertext, aes.BlockSize)
 	priorCiphertext := e.iv
 	c, err := aes.NewCipher(e.key)

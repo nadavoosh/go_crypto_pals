@@ -6,19 +6,21 @@ import (
 	"strings"
 )
 
+type CryptoMaterial struct {
+	key   []byte
+	iv    []byte
+	nonce int64
+}
+
 type EncryptedText struct {
-	key        []byte
+	CryptoMaterial
 	ciphertext []byte
 	padding    Padding
-	iv         []byte
-	nonce      int64
 }
 
 type PlainText struct {
-	key       []byte
+	CryptoMaterial
 	plaintext []byte
-	iv        []byte
-	nonce     int64
 }
 
 func (d PlainText) score() float64 {
@@ -51,7 +53,7 @@ func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := PlainText{plaintext: t, key: []byte{i}}
+		tprime := PlainText{plaintext: t, CryptoMaterial: CryptoMaterial{key: []byte{i}}}
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime
