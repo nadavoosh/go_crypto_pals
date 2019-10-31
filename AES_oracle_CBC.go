@@ -8,7 +8,7 @@ import (
 
 func getValidationFnForOracle(key []byte) ValidationFn {
 	return func(ciphertext, iv []byte) (bool, error) {
-		e := EncryptedText{ciphertext: ciphertext, iv: iv, key: key}
+		e := EncryptedText{ciphertext: ciphertext, CryptoMaterial: CryptoMaterial{key: key, iv: iv}}
 		_, err := Decrypt(CBC, e)
 		if err != nil {
 			if err.Error() == "Invalid Padding" {
@@ -27,7 +27,7 @@ func (c CBCPaddingOracle) decryptCBCPadding() ([]byte, error) {
 	for k := range chunks {
 		var plaintext []byte
 		for j := 1; j <= aes.BlockSize; j++ {
-			b, err := c.findNextByte(chunks[k], plaintext, j)
+			b, err := c.calculateNextByte(chunks[k], plaintext, j)
 			if err != nil {
 				return nil, err
 			}
@@ -42,10 +42,10 @@ func (c CBCPaddingOracle) decryptCBCPadding() ([]byte, error) {
 	}
 	return RemovePKCSPadding(finalPlaintext), nil
 }
-func (c CBCPaddingOracle) findNextByte(block, plaintext []byte, j int) (byte, error) {
+func (c CBCPaddingOracle) calculateNextByte(block, plaintext []byte, j int) (byte, error) {
 	base := bytes.Repeat([]byte{0}, aes.BlockSize-j)
 	soFar := FlexibleXor(plaintext, bytes.Repeat([]byte{byte(j)}, len(plaintext)))
-	for i := byte(0); i < 255; i++ {
+	for i := 0; i < 256; i++ {
 		filler := append(append(base, byte(i)), soFar...)
 		paddingCorrect, err := c.validationFn(append(filler, block...), c.iv)
 		if err != nil {
@@ -57,8 +57,9 @@ func (c CBCPaddingOracle) findNextByte(block, plaintext []byte, j int) (byte, er
 			if err != nil {
 				return byte(0), err
 			}
+			// fmt.Printf("YES correct padding found for byte %02v: %v : %v : %v \n", j, block, require, filler)
 			return g[aes.BlockSize-j], nil
 		}
 	}
-	return byte(0), fmt.Errorf("next byte not found")
+	return byte(0), fmt.Errorf("no correct padding found for byte %v: %v", j, block)
 }

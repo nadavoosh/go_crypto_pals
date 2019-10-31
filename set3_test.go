@@ -28,7 +28,7 @@ func padAndEncryptFromSet() (EncryptedText, error) {
 	if err != nil {
 		return EncryptedText{}, err
 	}
-	d := PlainText{plaintext: []byte(plaintext), key: FixedKey, iv: GenerateKey()}
+	d := PlainText{plaintext: []byte(plaintext), CryptoMaterial: CryptoMaterial{key: FixedKey, iv: GenerateKey()}}
 	return Encrypt(CBC, d)
 }
 
@@ -76,9 +76,8 @@ func TestCTRCipher(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
 	e := EncryptedText{
-		ciphertext: cipherterxt,
-		key:        key,
-		nonce:      nonce,
+		ciphertext:     cipherterxt,
+		CryptoMaterial: CryptoMaterial{key: key, nonce: nonce},
 	}
 	p, err := Decrypt(CTC, e)
 	if err != nil {
@@ -91,9 +90,8 @@ func TestCTRCipher(t *testing.T) {
 		return
 	}
 	d := PlainText{
-		plaintext: []byte(want),
-		key:       key,
-		nonce:     nonce,
+		plaintext:      []byte(want),
+		CryptoMaterial: CryptoMaterial{key: key, nonce: nonce},
 	}
 	c, err := Encrypt(CTC, d)
 	if err != nil {
@@ -133,9 +131,8 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			return
 		}
 		d := PlainText{
-			plaintext: decoded,
-			key:       key,
-			nonce:     nonce,
+			plaintext:      decoded,
+			CryptoMaterial: CryptoMaterial{key: key, nonce: nonce},
 		}
 		c, err := Encrypt(CTC, d)
 		if err != nil {
@@ -170,9 +167,8 @@ func TestBreakCTRStatistically(t *testing.T) {
 		}
 		actual = append(actual, decoded...)
 		d := PlainText{
-			plaintext: decoded,
-			key:       key,
-			nonce:     nonce,
+			plaintext:      decoded,
+			CryptoMaterial: CryptoMaterial{key: key, nonce: nonce},
 		}
 		c, err := Encrypt(CTC, d)
 		if err != nil {
@@ -291,8 +287,8 @@ func TestEncryptWithMT19937(t *testing.T) {
 	key := GenerateKey()
 	original := GenerateKey()
 	d := PlainText{
-		plaintext: original,
-		key:       key,
+		plaintext:      original,
+		CryptoMaterial: CryptoMaterial{key: key},
 	}
 	c, err := Encrypt(MT, d)
 	if err != nil {

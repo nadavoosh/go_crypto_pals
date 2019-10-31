@@ -17,12 +17,12 @@ func seedFromKeyE(e *EncryptedText) {
 
 func encryptMT(d PlainText) (EncryptedText, error) {
 	seedFromKeyD(&d)
-	return EncryptedText{key: d.key, ciphertext: doMT(d.plaintext, d.MT)}, nil
+	return EncryptedText{CryptoMaterial: CryptoMaterial{key: d.key}, ciphertext: doMT(d.plaintext, d.MT)}, nil
 }
 
 func decryptMT(e EncryptedText) (PlainText, error) {
 	seedFromKeyE(&e)
-	return PlainText{key: e.key, plaintext: doMT(e.ciphertext, e.MT)}, nil
+	return PlainText{CryptoMaterial: CryptoMaterial{key: e.key}, plaintext: doMT(e.ciphertext, e.MT)}, nil
 }
 
 func doMT(orig []byte, m *MT19937) []byte {

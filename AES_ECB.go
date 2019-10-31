@@ -29,7 +29,7 @@ func encryptECB(d PlainText) (EncryptedText, error) {
 	for _, block := range blocks {
 		ciphertext = append(ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{ciphertext: ciphertext, padding: PKCS, key: d.key}, nil
+	return EncryptedText{ciphertext: ciphertext, padding: PKCS, CryptoMaterial: CryptoMaterial{key: d.key}}, nil
 }
 
 func smellsOfECB(b []byte) bool {

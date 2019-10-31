@@ -150,7 +150,7 @@ func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
 }
 
 func (o Encryptor) getPlaintext() PlainText {
-	return PlainText{plaintext: o.plaintext, key: o.key}
+	return PlainText{plaintext: o.plaintext, CryptoMaterial: CryptoMaterial{key: o.key}}
 }
 
 func (o Encryptor) Encrypt() (EncryptedText, error) {
