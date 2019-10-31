@@ -38,15 +38,6 @@ func encryptCTC(d PlainText) (EncryptedText, error) {
 
 func decryptCTC(e EncryptedText) (PlainText, error) {
 	d := PlainText{key: e.key}
-	blocks := chunk(e.ciphertext, aes.BlockSize)
-	for i, block := range blocks {
-		keystream, err := getKeystream(d.key, e.nonce, int64(i))
-		if err != nil {
-			return d, err
-		}
-		trimmedKeystream := keystream[:len(block)]
-		plain := FlexibleXor(block, trimmedKeystream)
-		d.plaintext = append(d.plaintext, plain...)
-	}
+
 	return d, nil
 }

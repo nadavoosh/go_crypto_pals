@@ -67,7 +67,7 @@ func TestEncryptAESCBC(t *testing.T) {
 	in2 := EncryptedText{ciphertext: []byte(c.ciphertext), key: key, iv: iv}
 	got, err := Decrypt(CBC, in2)
 	if err != nil {
-		t.Errorf("decryptCBC(%q) threw an error: %s", in2, err)
+		t.Errorf("decryptCBC(%v) threw an error: %s", in2, err)
 	}
 	if string(got.plaintext) != in {
 		t.Errorf("decryptCBC(%q) == %q, want %q", in, string(got.plaintext), in)
@@ -84,10 +84,10 @@ func TestEncryptCBC(t *testing.T) {
 	in := EncryptedText{key: key, ciphertext: decoded, iv: RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
 	got, err := decryptCBC(in)
 	if err != nil {
-		t.Errorf("decryptCBC(%q) threw an error: %s", in, err)
+		t.Errorf("decryptCBC(%v) threw an error: %s", in, err)
 	}
 	if !TestEq(got.plaintext, RemovePKCSPadding([]byte(FunkyMusic))) {
-		t.Errorf("encryptCBC(%q) == %q, want %q", in, got, FunkyMusic)
+		t.Errorf("encryptCBC(%v) == %v, want %q", in, got, FunkyMusic)
 	}
 }
 

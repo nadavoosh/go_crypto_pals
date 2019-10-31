@@ -129,6 +129,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 		decoded, err := ParseBase64(plaintext_line)
 		if err != nil {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
+			return
 		}
 		d := PlainText{
 			plaintext: decoded,
@@ -138,6 +139,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 		c, err := Encrypt(CTC, d)
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
+			return
 		}
 		l := min(len(decoded), len(keystream_guess))
 		plaintext_bytes := FlexibleXor(keystream_guess[:l], c.ciphertext)
@@ -163,6 +165,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 		decoded, err := ParseBase64(plaintext_line)
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
+			return
 		}
 		actual = append(actual, decoded...)
 		d := PlainText{
@@ -173,6 +176,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 		c, err := Encrypt(CTC, d)
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
+			return
 		}
 		if len(c.ciphertext) < min_len {
 			min_len = len(c.ciphertext)
@@ -186,11 +190,13 @@ func TestBreakCTRStatistically(t *testing.T) {
 	got, err := DecryptRepeatingKeyXorWithKeysize(ciphertexts, min_len)
 	if err != nil {
 		t.Errorf("DecryptRepeatingKeyXorWithKeysize threw an error: %s", err)
+		return
 	}
 	for i, line := range lines {
 		actual_bytes, err := ParseBase64(line)
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
+			return
 		}
 
 		// Make a Regex to say we only want letters and numbers
@@ -204,6 +210,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 
 		if decrypted_string != actual_trimmed_string {
 			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decrypted_string, actual_trimmed_string)
+			return
 		}
 	}
 }
@@ -216,6 +223,7 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 	}
 	if unseededSum != 268571260341 {
 		t.Errorf("MersenneTwister unseeded sum isn't right: %v\n", unseededSum)
+		return
 	}
 	m.Seed(523)
 	seededSum := 0
@@ -224,6 +232,7 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 	}
 	if seededSum != 282554711866 {
 		t.Errorf("MersenneTwister seeded sum isn't right: %v\n", seededSum)
+		return
 	}
 }
 
@@ -256,10 +265,11 @@ func TestDiscoverSeed(t *testing.T) {
 	}
 	if !guessed_right {
 		t.Errorf("Couldn't figure out the seed. Should have found %v", tt)
+		return
 	}
 }
 
-func TestCloneMT199937(t *testing.T) {
+func TestCloneMT19937(t *testing.T) {
 	m := NewMersenneTwister()
 	clone := NewMersenneTwister()
 	m.Seed(int(time.Now().UnixNano()))
@@ -272,7 +282,32 @@ func TestCloneMT199937(t *testing.T) {
 	for i := 0; i < 2*n; i++ {
 		if clone.Uint32() != m.Uint32() {
 			t.Errorf("Clone incorrect somehow")
-			break
+			return
 		}
 	}
+}
+
+func TestEncryptMT19937(t *testing.T) {
+	key := GenerateKey()
+	original := "AAAAAAAAA"
+	d := PlainText{
+		plaintext: []byte(original),
+		key:       key,
+	}
+	c, err := Encrypt(CTC, d)
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+		return
+	}
+	// fmt.Println("done encrypting")
+	p, err := Decrypt(MT, c)
+	if err != nil {
+		t.Errorf("Decrypt threw an error: %s", err)
+		return
+	}
+	if string(p.plaintext) != original {
+		t.Errorf("Decrypt didn't work. Got %v, want %v\n", p.plaintext, original)
+		return
+	}
+
 }

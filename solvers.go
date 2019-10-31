@@ -12,6 +12,7 @@ type EncryptedText struct {
 	padding    Padding
 	iv         []byte
 	nonce      int64
+	MT         *MT19937
 }
 
 type PlainText struct {
@@ -19,6 +20,7 @@ type PlainText struct {
 	plaintext []byte
 	iv        []byte
 	nonce     int64
+	MT        *MT19937
 }
 
 func (d PlainText) score() float64 {
