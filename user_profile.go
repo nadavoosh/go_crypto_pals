@@ -56,7 +56,7 @@ func ProfileFor(email []byte) Profile {
 
 func EncryptedProfileFor(email []byte) (EncryptedText, error) {
 	p := ProfileFor(email).Encode()
-	return Encrypt(ECB, PlainText{plaintext: []byte(p), key: FixedKey})
+	return Encrypt(ECB, PlainText{plaintext: []byte(p), CryptoMaterial: CryptoMaterial{key: FixedKey}})
 }
 
 func getBytesOfLen(l int) []byte {
@@ -79,5 +79,5 @@ func BuildAdminProfile(email string) (EncryptedText, error) {
 		return EncryptedText{}, err
 	}
 	adminBlock := t.ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return EncryptedText{ciphertext: append(emailUIDBlock, adminBlock...), key: FixedKey, padding: PKCS}, err
+	return EncryptedText{ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: CryptoMaterial{key: FixedKey}, padding: PKCS}, err
 }

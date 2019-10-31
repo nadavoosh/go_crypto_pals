@@ -93,7 +93,7 @@ func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (PlainText, error)
 		return PlainText{}, err
 	}
 	// fmt.Printf("Best guess for key of length %d is %s\n", keysize, key)
-	return PlainText{key: decryptionKey, plaintext: hplain}, nil
+	return PlainText{CryptoMaterial: CryptoMaterial{key: decryptionKey}, plaintext: hplain}, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {

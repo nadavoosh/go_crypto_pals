@@ -7,14 +7,14 @@ import (
 
 func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
 	m := make(map[string]byte)
-	for i := byte(0); i < 255; i++ {
-		b := append(testInput, i)
+	for i := 0; i < 256; i++ {
+		b := append(testInput, byte(i))
 		p, err := f(b)
 		if err != nil {
 			return nil, err
 		}
 		ret := p.ciphertext[(blockNumber * blocksize) : (blockNumber+1)*blocksize]
-		m[string(ret)] = i
+		m[string(ret)] = byte(i)
 	}
 	return m, nil
 }

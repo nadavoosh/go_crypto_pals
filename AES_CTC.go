@@ -22,7 +22,7 @@ func getKeystream(key []byte, nonce, count int64) ([]byte, error) {
 }
 
 func encryptCTC(d PlainText) (EncryptedText, error) {
-	e := EncryptedText{key: d.key}
+	e := EncryptedText{CryptoMaterial: CryptoMaterial{key: d.key}}
 	blocks := chunk(d.plaintext, aes.BlockSize)
 	for i, block := range blocks {
 		keystream, err := getKeystream(d.key, d.nonce, int64(i))
@@ -37,7 +37,7 @@ func encryptCTC(d PlainText) (EncryptedText, error) {
 }
 
 func decryptCTC(e EncryptedText) (PlainText, error) {
-	d := PlainText{key: e.key}
+	d := PlainText{CryptoMaterial: CryptoMaterial{key: e.key}}
 	blocks := chunk(e.ciphertext, aes.BlockSize)
 	for i, block := range blocks {
 		keystream, err := getKeystream(d.key, e.nonce, int64(i))

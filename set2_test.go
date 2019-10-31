@@ -9,14 +9,14 @@ import (
 
 func appendAndEncrypt(a []byte) EncryptionFn {
 	return func(plain []byte) (EncryptedText, error) {
-		d := PlainText{plaintext: append(plain, a...), key: FixedKey}
+		d := PlainText{plaintext: append(plain, a...), CryptoMaterial: CryptoMaterial{key: FixedKey}}
 		return Encrypt(ECB, d)
 	}
 }
 
 func prependAndAppendAndEncrypt(a []byte) EncryptionFn {
 	return func(plain []byte) (EncryptedText, error) {
-		d := PlainText{plaintext: append(append(FixedBytes, plain...), a...), key: FixedKey}
+		d := PlainText{plaintext: append(append(FixedBytes, plain...), a...), CryptoMaterial: CryptoMaterial{key: FixedKey}}
 		return Encrypt(ECB, d)
 	}
 }
@@ -43,7 +43,7 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := Encrypt(ECB, PlainText{plaintext: []byte(FunkyMusic), key: key})
+	c, err := Encrypt(ECB, PlainText{plaintext: []byte(FunkyMusic), CryptoMaterial: CryptoMaterial{key: key}})
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", FunkyMusic, err)
 	}
@@ -60,11 +60,11 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	iv := RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := Encrypt(CBC, PlainText{plaintext: []byte(in), key: key, iv: iv})
+	c, err := Encrypt(CBC, PlainText{plaintext: []byte(in), CryptoMaterial: CryptoMaterial{key: key, iv: iv}})
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	in2 := EncryptedText{ciphertext: []byte(c.ciphertext), key: key, iv: iv}
+	in2 := EncryptedText{ciphertext: []byte(c.ciphertext), CryptoMaterial: CryptoMaterial{key: key, iv: iv}}
 	got, err := Decrypt(CBC, in2)
 	if err != nil {
 		t.Errorf("decryptCBC(%q) threw an error: %s", in2, err)
@@ -81,7 +81,7 @@ func TestEncryptCBC(t *testing.T) {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
 	key := []byte("YELLOW SUBMARINE")
-	in := EncryptedText{key: key, ciphertext: decoded, iv: RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
+	in := EncryptedText{ciphertext: decoded, CryptoMaterial: CryptoMaterial{key: key, iv: RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}}
 	got, err := decryptCBC(in)
 	if err != nil {
 		t.Errorf("decryptCBC(%q) threw an error: %s", in, err)
