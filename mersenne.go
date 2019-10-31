@@ -42,6 +42,7 @@ func NewMersenneTwister() *MT19937 {
 // Initialize the generator from a seed
 func (mt *MT19937) Seed(seed int) {
 	x := mt.state
+	// fmt.Printf("seeding with %v\n", seed)
 	x[0] = uint32(seed)
 	for i := uint32(1); i < n; i++ {
 		x[i] = f*(x[i-1]^(x[i-1]>>(w-2))) + i
@@ -61,7 +62,6 @@ func (mt *MT19937) Uint32() uint32 {
 	y ^= (y << s) & b
 	y ^= (y << t) & c
 	y ^= y >> l
-
 	mt.index++
 	return y
 }
@@ -78,11 +78,27 @@ func (mt *MT19937) twist() {
 	mt.index = 0
 }
 
-// func SeedFromUint32(y uint32) int {
-// 	y ^= y << l
-// 	y ^= (y << t) & c
-// 	y ^= (y << s) & b
-// 	y ^= (y << u) & d
-// 	y := mt.state[mt.index]
-// 	return y
-// }
+func Untemper(y_orig uint32) uint32 {
+	y := untemperRight(y_orig, l, d)
+	y = untemperLeft(y, t, c)
+	y = untemperLeft(y, s, b)
+	y = untemperRight(y, u, d)
+	return y
+}
+
+func untemperRight(y, shift, mask uint32) uint32 {
+	for i := w / int(shift); i >= 0; i-- {
+		filter := uint32((1<<shift)-1) << (i * int(shift))
+		yt := (y >> shift & mask) & filter
+		y = y ^ yt
+	}
+	return y
+}
+
+func untemperLeft(y, shift, mask uint32) uint32 {
+	for i := 0; i <= w/int(shift); i++ {
+		filter := uint32((1<<shift)-1) << (i * int(shift))
+		y = y ^ ((y << shift & mask) & filter)
+	}
+	return y
+}

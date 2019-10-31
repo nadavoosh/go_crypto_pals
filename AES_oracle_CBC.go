@@ -60,5 +60,5 @@ func (c CBCPaddingOracle) findNextByte(block, plaintext []byte, j int) (byte, er
 			return g[aes.BlockSize-j], nil
 		}
 	}
-	return byte(0), fmt.Errorf("not found")
+	return byte(0), fmt.Errorf("next byte not found")
 }

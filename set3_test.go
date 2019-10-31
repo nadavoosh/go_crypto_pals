@@ -4,6 +4,7 @@ import (
 	"fmt"
 	mathRand "math/rand"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 )
@@ -198,8 +199,8 @@ func TestBreakCTRStatistically(t *testing.T) {
 			t.Errorf("%v", err)
 		}
 
-		decrypted_string := reg.ReplaceAllString(string(got.plaintext[min_len*i:min_len*(i+1)]), "")
-		actual_trimmed_string := reg.ReplaceAllString(string(actual_bytes[:min_len]), "")
+		decrypted_string := strings.ToLower(reg.ReplaceAllString(string(got.plaintext[min_len*i:min_len*(i+1)]), ""))
+		actual_trimmed_string := strings.ToLower(reg.ReplaceAllString(string(actual_bytes[:min_len]), ""))
 
 		if decrypted_string != actual_trimmed_string {
 			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decrypted_string, actual_trimmed_string)
@@ -226,13 +227,53 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 	}
 }
 
-func TestCrackSeed(t *testing.T) {
+func TestDiscoverSeed(t *testing.T) {
 	t.Skip()
+	// run this test with `-timeout 0`
 	m := NewMersenneTwister()
-	mathRand.Seed(time.Now().UnixNano())
-	x := mathRand.Int31n(10) + 40
-	time.Sleep(time.Duration(x) * time.Second)
-	m.Seed(int(time.Now().Unix()))
+	mathRand.Seed(time.Now().Unix())
+	wait_at_least := int32(40)
+	wait_at_most := int32(1000)
+	wait := mathRand.Int31n(wait_at_most-wait_at_least) + wait_at_least
+	fmt.Printf("Waiting %v seconds...\n", wait)
+	time.Sleep(time.Duration(wait) * time.Second)
+	tt := time.Now().Unix()
+	m.Seed(int(tt))
+	wait2 := mathRand.Int31n(wait_at_most-wait_at_least) + wait_at_least
+	fmt.Printf("Waiting another %v seconds...\n", wait2)
+	time.Sleep(time.Duration(wait2) * time.Second)
 	out := m.Uint32()
-	fmt.Println(out)
+	// now guess:
+	var guessed_right bool
+	t_guess := int(time.Now().Unix())
+	for i := -(int(wait_at_most))*2 - 10; i < -int(wait_at_least); i++ {
+		m.Seed(t_guess + i)
+		if m.Uint32() == out {
+			guessed_right = true
+			fmt.Printf("The seed was %v, which was %v seconds ago\n", t_guess+i, -i)
+			break
+		}
+	}
+	if !guessed_right {
+		t.Errorf("Couldn't figure out the seed. Should have found %v", tt)
+	}
+}
+
+func TestCloneMT199937(t *testing.T) {
+	m := NewMersenneTwister()
+	clone := NewMersenneTwister()
+	m.Seed(int(time.Now().UnixNano()))
+	const n = 624
+	for i := 0; i < n; i++ {
+		clone.state[i] = Untemper(m.Uint32())
+	}
+	// now the states are the same, but the clone.index is `notSeeded` and m.index is `n`.
+	// set clone.index:
+	clone.index = n
+	for i := 0; i < 2*n; i++ {
+		if clone.Uint32() != m.Uint32() {
+			t.Errorf("Clone incorrect somehow")
+			break
+		}
+	}
 }
