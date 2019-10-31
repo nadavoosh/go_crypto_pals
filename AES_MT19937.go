@@ -5,21 +5,23 @@ import (
 	"encoding/binary"
 )
 
-func seedFromKeyD(d PlainText) {
+func seedFromKeyD(d *PlainText) {
 	d.MT = NewMersenneTwister()
 	d.MT.Seed(int(binary.BigEndian.Uint64(d.key)))
 }
 
-func seedFromKeyE(e EncryptedText) {
+func seedFromKeyE(e *EncryptedText) {
 	e.MT = NewMersenneTwister()
 	e.MT.Seed(int(binary.BigEndian.Uint64(e.key)))
 }
 
 func encryptMT(d PlainText) (EncryptedText, error) {
+	seedFromKeyD(&d)
 	return EncryptedText{key: d.key, ciphertext: doMT(d.plaintext, d.MT)}, nil
 }
 
 func decryptMT(e EncryptedText) (PlainText, error) {
+	seedFromKeyE(&e)
 	return PlainText{key: e.key, plaintext: doMT(e.ciphertext, e.MT)}, nil
 }
 

@@ -1,6 +1,7 @@
 package cryptopals
 
 import (
+	"bytes"
 	"fmt"
 	mathRand "math/rand"
 	"regexp"
@@ -289,23 +290,27 @@ func TestCloneMT19937(t *testing.T) {
 
 func TestEncryptMT19937(t *testing.T) {
 	key := GenerateKey()
-	original := "AAAAAAAAA"
+	base := bytes.Repeat(ByteA, 14)
+	original, err := addRandomBytes(base)
+	if err != nil {
+		t.Errorf("addRandomBytes threw an error: %s", err)
+		return
+	}
 	d := PlainText{
 		plaintext: []byte(original),
 		key:       key,
 	}
-	c, err := Encrypt(CTC, d)
+	c, err := Encrypt(MT, d)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-	// fmt.Println("done encrypting")
 	p, err := Decrypt(MT, c)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
-	if string(p.plaintext) != original {
+	if string(p.plaintext) != string(original) {
 		t.Errorf("Decrypt didn't work. Got %v, want %v\n", p.plaintext, original)
 		return
 	}
