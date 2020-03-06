@@ -11,6 +11,7 @@ import (
 
 type AESMode int
 
+// modes for encryption
 const (
 	ECB AESMode = 0
 	CBC AESMode = 1

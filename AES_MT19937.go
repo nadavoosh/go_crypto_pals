@@ -1,9 +1,10 @@
 package cryptopals
 
 import (
-	"crypto/aes"
 	"encoding/binary"
 )
+
+const mersenneStreamBlockSize = 8
 
 func seedFromKeyD(d *PlainText) {
 	d.MT = NewMersenneTwister()
@@ -25,17 +26,26 @@ func decryptMT(e EncryptedText) (PlainText, error) {
 	return PlainText{CryptoMaterial: CryptoMaterial{key: e.key}, plaintext: doMT(e.ciphertext, e.MT)}, nil
 }
 
+func getMTKeystream(m *MT19937) []byte {
+	keystream := make([]byte, mersenneStreamBlockSize)
+
+	// TODO: loop here instead of repeating
+	binary.LittleEndian.PutUint32(keystream, m.Uint32())
+	binary.LittleEndian.PutUint32(keystream[4:], m.Uint32())
+
+	return keystream
+}
+
 func doMT(orig []byte, m *MT19937) []byte {
 	if m == nil {
 		panic("oops")
 	}
 	var result []byte
-	blocks := chunk(orig, aes.BlockSize)
+
+	blocks := chunk(orig, mersenneStreamBlockSize)
 	for _, block := range blocks {
-		keystream := make([]byte, 32)
-		binary.LittleEndian.PutUint32(keystream, m.Uint32())
-		trimmedKeystream := keystream[:len(block)]
-		plain := FlexibleXor(block, trimmedKeystream)
+		keystream := getMTKeystream(m)
+		plain := FlexibleXor(block, keystream[:len(block)])
 		result = append(result, plain...)
 	}
 	return result

@@ -85,7 +85,7 @@ func Untemper(y_orig uint32) uint32 {
 
 func untemperRight(y, shift, mask uint32) uint32 {
 	for i := w / int(shift); i >= 0; i-- {
-		filter := uint32((1<<shift)-1) << (i * int(shift))
+		filter := uint32((1<<shift)-1) << uint32(i*int(shift))
 		yt := (y >> shift & mask) & filter
 		y = y ^ yt
 	}
@@ -94,7 +94,7 @@ func untemperRight(y, shift, mask uint32) uint32 {
 
 func untemperLeft(y, shift, mask uint32) uint32 {
 	for i := 0; i <= w/int(shift); i++ {
-		filter := uint32((1<<shift)-1) << (i * int(shift))
+		filter := uint32((1<<shift)-1) << uint32(i*int(shift))
 		y = y ^ ((y << shift & mask) & filter)
 	}
 	return y

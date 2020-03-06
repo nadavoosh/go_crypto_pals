@@ -2,6 +2,8 @@ package cryptopals
 
 import (
 	// "bytes"
+	"bytes"
+	"crypto/rand"
 	"fmt"
 	mathRand "math/rand"
 	"regexp"
@@ -123,9 +125,9 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 	// randomly generated:
 	key := []byte{18, 39, 184, 124, 192, 76, 210, 222, 7, 118, 111, 129, 173, 147, 95, 187}
 	// guessed iteratively by looking at what prints and finding one letter to try next:
-	keystream_guess := []byte{61, 119, 199, 221, 251, 12, 179, 47, 28, 48, 171, 47, 152, 235, 153, 236, 113, 47, 144, 28, 151, 200, 54, 228, 104, 190, 165, 111, 120, 237, 239, 125, 179, 228, 122, 201, 172, 60}
-	for _, plaintext_line := range lines {
-		decoded, err := ParseBase64(plaintext_line)
+	keystreamGuess := []byte{61, 119, 199, 221, 251, 12, 179, 47, 28, 48, 171, 47, 152, 235, 153, 236, 113, 47, 144, 28, 151, 200, 54, 228, 104, 190, 165, 111, 120, 237, 239, 125, 179, 228, 122, 201, 172, 60}
+	for _, plaintextLine := range lines {
+		decoded, err := ParseBase64(plaintextLine)
 		if err != nil {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
@@ -139,10 +141,10 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
 		}
-		l := min(len(decoded), len(keystream_guess))
-		plaintext_bytes := FlexibleXor(keystream_guess[:l], c.ciphertext)
-		fmt.Println(plaintext_bytes[l:])
-		fmt.Println(string(plaintext_bytes))
+		l := min(len(decoded), len(keystreamGuess))
+		plaintextBytes := FlexibleXor(keystreamGuess[:l], c.ciphertext)
+		fmt.Println(plaintextBytes[l:])
+		fmt.Println(string(plaintextBytes))
 	}
 	return
 }
@@ -157,10 +159,10 @@ func TestBreakCTRStatistically(t *testing.T) {
 	actual := []byte{}
 	nonce := int64(0)
 	key := GenerateKey()
-	raw_ciphertexts := [][]byte{}
-	min_len := 100000
-	for _, plaintext_line := range lines {
-		decoded, err := ParseBase64(plaintext_line)
+	rawCiphertexts := [][]byte{}
+	minLen := 100000
+	for _, plaintextLine := range lines {
+		decoded, err := ParseBase64(plaintextLine)
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
 			return
@@ -175,22 +177,22 @@ func TestBreakCTRStatistically(t *testing.T) {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
 		}
-		if len(c.ciphertext) < min_len {
-			min_len = len(c.ciphertext)
+		if len(c.ciphertext) < minLen {
+			minLen = len(c.ciphertext)
 		}
-		raw_ciphertexts = append(raw_ciphertexts, c.ciphertext)
+		rawCiphertexts = append(rawCiphertexts, c.ciphertext)
 	}
 	ciphertexts := []byte{}
-	for _, ciphertext := range raw_ciphertexts {
-		ciphertexts = append(ciphertexts, ciphertext[:min_len]...)
+	for _, ciphertext := range rawCiphertexts {
+		ciphertexts = append(ciphertexts, ciphertext[:minLen]...)
 	}
-	got, err := DecryptRepeatingKeyXorWithKeysize(ciphertexts, min_len)
+	got, err := DecryptRepeatingKeyXorWithKeysize(ciphertexts, minLen)
 	if err != nil {
 		t.Errorf("DecryptRepeatingKeyXorWithKeysize threw an error: %s", err)
 		return
 	}
 	for i, line := range lines {
-		actual_bytes, err := ParseBase64(line)
+		actualBytes, err := ParseBase64(line)
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
 			return
@@ -202,11 +204,11 @@ func TestBreakCTRStatistically(t *testing.T) {
 			t.Errorf("%v", err)
 		}
 
-		decrypted_string := strings.ToLower(reg.ReplaceAllString(string(got.plaintext[min_len*i:min_len*(i+1)]), ""))
-		actual_trimmed_string := strings.ToLower(reg.ReplaceAllString(string(actual_bytes[:min_len]), ""))
+		decryptedString := strings.ToLower(reg.ReplaceAllString(string(got.plaintext[minLen*i:minLen*(i+1)]), ""))
+		actualTrimmedString := strings.ToLower(reg.ReplaceAllString(string(actualBytes[:minLen]), ""))
 
-		if decrypted_string != actual_trimmed_string {
-			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decrypted_string, actual_trimmed_string)
+		if decryptedString != actualTrimmedString {
+			t.Errorf("DecryptRepeatingKeyXorWithKeysize didn't work for block %v: \n%s\n%s", i, decryptedString, actualTrimmedString)
 			return
 		}
 	}
@@ -234,33 +236,37 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 }
 
 func TestDiscoverSeed(t *testing.T) {
+	// this test contians a lot of randomized waiting, by design.
+	// in the main test suite, we skip it. To run directly, do `go test --run TestDiscoverSeed`
 	t.Skip()
+
 	// run this test with `-timeout 0`
 	m := NewMersenneTwister()
 	mathRand.Seed(time.Now().Unix())
-	wait_at_least := int32(40)
-	wait_at_most := int32(1000)
-	wait := mathRand.Int31n(wait_at_most-wait_at_least) + wait_at_least
+	waitAtLeast := int32(40)
+	waitAtMost := int32(1000)
+	wait := mathRand.Int31n(waitAtMost-waitAtLeast) + waitAtLeast
 	fmt.Printf("Waiting %v seconds...\n", wait)
 	time.Sleep(time.Duration(wait) * time.Second)
 	tt := time.Now().Unix()
 	m.Seed(int(tt))
-	wait2 := mathRand.Int31n(wait_at_most-wait_at_least) + wait_at_least
+	wait2 := mathRand.Int31n(waitAtMost-waitAtLeast) + waitAtLeast
 	fmt.Printf("Waiting another %v seconds...\n", wait2)
 	time.Sleep(time.Duration(wait2) * time.Second)
 	out := m.Uint32()
+
 	// now guess:
-	var guessed_right bool
-	t_guess := int(time.Now().Unix())
-	for i := -(int(wait_at_most))*2 - 10; i < -int(wait_at_least); i++ {
-		m.Seed(t_guess + i)
+	var guessedRight bool
+	tGuess := int(time.Now().Unix())
+	for i := -(int(waitAtMost))*2 - 10; i < -int(waitAtLeast); i++ {
+		m.Seed(tGuess + i)
 		if m.Uint32() == out {
-			guessed_right = true
-			fmt.Printf("The seed was %v, which was %v seconds ago\n", t_guess+i, -i)
+			guessedRight = true
+			fmt.Printf("The seed was %v, which was %v seconds ago\n", tGuess+i, -i)
 			break
 		}
 	}
-	if !guessed_right {
+	if !guessedRight {
 		t.Errorf("Couldn't figure out the seed. Should have found %v", tt)
 		return
 	}
@@ -283,9 +289,9 @@ func TestCloneMT19937(t *testing.T) {
 		}
 	}
 }
-func TestEncryptWithMT19937(t *testing.T) {
+func TestMT19937Encryption(t *testing.T) {
 	key := GenerateKey()
-	original := GenerateKey()
+	original := []byte("YELLOWSUBMARINE")
 	d := PlainText{
 		plaintext:      original,
 		CryptoMaterial: CryptoMaterial{key: key},
@@ -295,33 +301,39 @@ func TestEncryptWithMT19937(t *testing.T) {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
+
 	p, err := Decrypt(MT, c)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
+
 	if string(p.plaintext) != string(original) {
-		t.Errorf("Decrypt didn't work. Got %s, want %s\n", p.plaintext, original)
+		t.Errorf("Decrypt didn't work. Got\n`%s` instead of \n`%s`\n", p.plaintext, original)
 		return
 	}
 }
 
-func TestEncryptMT19937(t *testing.T) {
-	// key := GenerateKey()
-	// base := bytes.Repeat(ByteA, 14)
-	// original, err := addRandomBytes(base)
-	// if err != nil {
-	// 	t.Errorf("addRandomBytes threw an error: %s", err)
-	// 	return
-	// }
-	// d := PlainText{
-	// 	plaintext: []byte(original),
-	// 	key:       key,
-	// }
-	// // _, err := Encrypt(MT, d)
-	// if string(key) != string(key_guess) {
-	// 	t.Errorf("Guessing the MT key from the ciphertext didn't work. Got %v, want %v\n", key_guess, key)
-	// 	return
-	// }
+func TestBreakMT19937Encryption(t *testing.T) {
+	key := GenerateKey()
+	base := bytes.Repeat(ByteA, 14)
+	randomBytes := make([]byte, mathRand.Intn(5)+5)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		t.Errorf("rand.Read threw an error: %s", err)
+		return
+	}
 
+	d := PlainText{
+		plaintext:      append(randomBytes, base...),
+		CryptoMaterial: CryptoMaterial{key: key},
+	}
+	fmt.Println(key)
+	fmt.Println(d.plaintext)
+	c, err := Encrypt(MT, d)
+	if err != nil {
+		t.Errorf("Encrypt threw an error: %s", err)
+		return
+	}
+	fmt.Println(c.ciphertext)
 }
