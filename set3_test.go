@@ -37,6 +37,17 @@ func padAndEncryptFromSet() (EncryptedText, error) {
 	return Encrypt(CBC, d)
 }
 
+func mersenneEncrypt(plaintext []byte, seed uint16) (EncryptedText, error) {
+	keyByteArray := make([]byte, 2)
+	binary.BigEndian.PutUint16(keyByteArray, seed)
+
+	d := PlainText{
+		plaintext: plaintext,
+		CryptoMaterial: CryptoMaterial{key: keyByteArray},
+	}
+	return Encrypt(MT, d)
+}
+
 func TestCBCPaddingValidation(t *testing.T) {
 	d, err := padAndEncryptFromSet()
 	if err != nil {
@@ -316,11 +327,6 @@ func TestMT19937Encryption(t *testing.T) {
 
 func TestBreakMT19937Encryption(t *testing.T) {
 	const MersenneSeedSpace = 65536
-	key := uint16(mathRand.Intn(MersenneSeedSpace))
-
-	keyByteArray := make([]byte, 2)
-	binary.BigEndian.PutUint16(keyByteArray,key)
-
 	base := bytes.Repeat(ByteA, 14)
 	randomBytes := make([]byte, mathRand.Intn(5)+5)
 	_, err := rand.Read(randomBytes)
@@ -329,14 +335,9 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		return
 	}
 
-	d := PlainText{
-		plaintext:      append(randomBytes, base...),
-		CryptoMaterial: CryptoMaterial{key: keyByteArray},
-	}
-
-	c, err := Encrypt(MT, d)
+	c, err := mersenneEncrypt(append(randomBytes, base...), uint16(mathRand.Intn(MersenneSeedSpace)))
 	if err != nil {
-		t.Errorf("Encrypt threw an error: %s", err)
+		t.Errorf("encryptMT threw an error: %s", err)
 		return
 	}
 
@@ -366,35 +367,43 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		}
 	}
 	if !success {
-		t.Errorf("Key not found. Should have been: %s\n", keyByteArray)
+		t.Errorf("Key not found. Should have been: %s\n", c.CryptoMaterial.key)
 	}
 }
 
-func generateToken(m *MT19937) []byte {
-	tokenLength := 16
-	token := make([]byte, tokenLength)
-	for i := 0; i < tokenLength/mersenneNumberBytes; i++ {
-		binary.LittleEndian.PutUint32(token[(i*mersenneNumberBytes):], m.Uint32())
+func tokenOracle() (EncryptedText, error) {
+	plaintext := bytes.Repeat(ByteA, mathRand.Intn(20)+4)
+	return mersenneEncrypt(plaintext, uint16(time.Now().Unix()))
+}
+
+func isTokenForRecentTime(token string) (bool, error) {
+	now := int(time.Now().Unix())
+	sampleText := bytes.Repeat(ByteA, len(token)) // we know the oracle is just encrypting byteA repeated
+	window := 10 * 60 // check the last 10 minutes
+	for i := now; i > now - window; i-- {
+		c, err := mersenneEncrypt(sampleText, uint16(i))
+		if err != nil {
+			return false, err
+		}
+		if string(c.ciphertext) == token {
+			return true, nil
+		}
 	}
-	return token;
+	return false, nil
 }
 
 func TestGeneratePasswordResetToken(t *testing.T) {
-	m := NewMersenneTwister()
-	m.Seed(int(time.Now().Unix()))
-	token := generateToken(m)
-
-	var found bool
-	now := int(time.Now().Unix())
-	window := 10 * 60 // check the last 10 minutes
-	for i := now; i > now - window; i-- {
-		m := NewMersenneTwister()
-		m.Seed(i)
-		if string(token) == string(generateToken(m)) {
-			found = true
-			break
-		}
+	token, err := tokenOracle()
+	if err != nil {
+		t.Errorf("tokenOracle threw an error: %s", err)
+		return
 	}
+	found, err := isTokenForRecentTime(string(token.ciphertext))
+	if err != nil {
+		t.Errorf("isTokenForRecentTime threw an error: %s", err)
+		return
+	}
+
 	if !found {
 		t.Errorf("Password Reset Token not identified.")
 	}
