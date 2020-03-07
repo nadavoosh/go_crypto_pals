@@ -8,12 +8,12 @@ const mersenneStreamBlockSize = 8
 
 func seedFromKeyD(d *PlainText) {
 	d.MT = NewMersenneTwister()
-	d.MT.Seed(int(binary.BigEndian.Uint64(d.key)))
+	d.MT.Seed(int(binary.BigEndian.Uint16(d.key)))
 }
 
 func seedFromKeyE(e *EncryptedText) {
 	e.MT = NewMersenneTwister()
-	e.MT.Seed(int(binary.BigEndian.Uint64(e.key)))
+	e.MT.Seed(int(binary.BigEndian.Uint16(e.key)))
 }
 
 func encryptMT(d PlainText) (EncryptedText, error) {
@@ -30,7 +30,7 @@ func getMTKeystream(m *MT19937) []byte {
 	keystream := make([]byte, mersenneStreamBlockSize)
 
 	// TODO: loop here instead of repeating
-	binary.LittleEndian.PutUint32(keystream, m.Uint32())
+	binary.LittleEndian.PutUint32(keystream[0:], m.Uint32())
 	binary.LittleEndian.PutUint32(keystream[4:], m.Uint32())
 
 	return keystream

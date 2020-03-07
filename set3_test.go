@@ -4,6 +4,7 @@ import (
 	// "bytes"
 	"bytes"
 	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	mathRand "math/rand"
 	"regexp"
@@ -236,10 +237,7 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 }
 
 func TestDiscoverSeed(t *testing.T) {
-	// this test contians a lot of randomized waiting, by design.
-	// in the main test suite, we skip it. To run directly, do `go test --run TestDiscoverSeed`
-	t.Skip()
-
+	t.Skip("this test contians a lot of randomized waiting, by design.")
 	// run this test with `-timeout 0`
 	m := NewMersenneTwister()
 	mathRand.Seed(time.Now().Unix())
@@ -315,10 +313,16 @@ func TestMT19937Encryption(t *testing.T) {
 }
 
 func TestBreakMT19937Encryption(t *testing.T) {
-	key := GenerateKey()
+	key := make([]byte, 2)
+	_, err := rand.Read(key)
+	if err != nil {
+		t.Errorf("rand.Read threw an error: %s", err)
+		return
+	}
 	base := bytes.Repeat(ByteA, 14)
-	randomBytes := make([]byte, mathRand.Intn(5)+5)
-	_, err := rand.Read(randomBytes)
+	// randomBytes := make([]byte, mathRand.Intn(5)+5)
+	randomBytes := make([]byte, 2)
+	_, err = rand.Read(randomBytes)
 	if err != nil {
 		t.Errorf("rand.Read threw an error: %s", err)
 		return
@@ -328,12 +332,35 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		plaintext:      append(randomBytes, base...),
 		CryptoMaterial: CryptoMaterial{key: key},
 	}
-	fmt.Println(key)
-	fmt.Println(d.plaintext)
+
 	c, err := Encrypt(MT, d)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-	fmt.Println(c.ciphertext)
+	randomByteCount := len(c.ciphertext) - len(base)
+	merseeneValueSlice := FlexibleXor(c.ciphertext[randomByteCount:], base)
+
+	var success bool
+	const MersenneSeedSpace = 65536
+
+	for i := 0; i < MersenneSeedSpace; i++ {
+		m := NewMersenneTwister()
+		m.Seed(i)
+		keyGuess := make([]byte, 16)
+
+		// TODO: loop here instead of repeating
+		binary.LittleEndian.PutUint32(keyGuess[0:], m.Uint32())
+		binary.LittleEndian.PutUint32(keyGuess[4:], m.Uint32())
+		binary.LittleEndian.PutUint32(keyGuess[8:], m.Uint32())
+		binary.LittleEndian.PutUint32(keyGuess[12:], m.Uint32())
+
+		if string(merseeneValueSlice) == string(keyGuess[randomByteCount:]) {
+			success = true
+			break
+		}
+	}
+	if !success {
+		t.Errorf("Key not found. Should have been: %s\n", key)
+	}
 }
