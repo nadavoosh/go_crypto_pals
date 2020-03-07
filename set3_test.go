@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const mersenneNumberBytes = 4 // each mersenne number is 32 bits long, which is 4 bytes of keystream
+
 func padAndEncryptFromSet() (EncryptedText, error) {
 	strings := []string{
 		"MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
@@ -340,7 +342,6 @@ func TestBreakMT19937Encryption(t *testing.T) {
 
 	randomByteCount := len(c.ciphertext) - len(base)
 	merseeneValueSlice := FlexibleXor(c.ciphertext[randomByteCount:len(c.ciphertext)], base)
-	mersenneNumberBytes := 4 // each mersenne number is 32 bits long, which is 4 bytes of keystream
 	var success bool
 
 	// try all the possible keys until we find one that generates the known sequence in merseeneValueSlice
@@ -366,5 +367,35 @@ func TestBreakMT19937Encryption(t *testing.T) {
 	}
 	if !success {
 		t.Errorf("Key not found. Should have been: %s\n", keyByteArray)
+	}
+}
+
+func generateToken(m *MT19937) []byte {
+	tokenLength := 16
+	token := make([]byte, tokenLength)
+	for i := 0; i < tokenLength/mersenneNumberBytes; i++ {
+		binary.LittleEndian.PutUint32(token[(i*mersenneNumberBytes):], m.Uint32())
+	}
+	return token;
+}
+
+func TestGeneratePasswordResetToken(t *testing.T) {
+	m := NewMersenneTwister()
+	m.Seed(int(time.Now().Unix()))
+	token := generateToken(m)
+
+	var found bool
+	now := int(time.Now().Unix())
+	window := 10 * 60 // check the last 10 minutes
+	for i := now; i > now - window; i-- {
+		m := NewMersenneTwister()
+		m.Seed(i)
+		if string(token) == string(generateToken(m)) {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Password Reset Token not identified.")
 	}
 }
