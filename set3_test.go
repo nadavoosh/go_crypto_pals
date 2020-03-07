@@ -346,7 +346,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 	for i := 0; i < MersenneSeedSpace; i++ {
 		m := NewMersenneTwister()
 		m.Seed(i)
-		size := len(c.ciphertext)/mersenneStreamBlockSize + 1*(len(c.ciphertext)%mersenneStreamBlockSize)
+		size := len(c.ciphertext)/mersenneStreamBlockSize + 1
 		keyGuess := make([]byte, size*mersenneStreamBlockSize)
 		numbersToGenerate := size * mersenneStreamBlockSize / 4 // each mersenne number gives us 4 bytes of the key
 		for i := 0; i < numbersToGenerate; i++ {
