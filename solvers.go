@@ -10,6 +10,7 @@ type CryptoMaterial struct {
 	key   []byte
 	iv    []byte
 	nonce int64
+	MT    *MT19937
 }
 
 type EncryptedText struct {
