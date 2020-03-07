@@ -313,15 +313,15 @@ func TestMT19937Encryption(t *testing.T) {
 }
 
 func TestBreakMT19937Encryption(t *testing.T) {
-	key := make([]byte, 2)
-	_, err := rand.Read(key)
-	if err != nil {
-		t.Errorf("rand.Read threw an error: %s", err)
-		return
-	}
+	const MersenneSeedSpace = 65536
+	key := uint16(mathRand.Intn(MersenneSeedSpace))
+
+	keyByteArray := make([]byte, 2)
+	binary.BigEndian.PutUint16(keyByteArray,key)
+
 	base := bytes.Repeat(ByteA, 14)
 	randomBytes := make([]byte, mathRand.Intn(5)+5)
-	_, err = rand.Read(randomBytes)
+	_, err := rand.Read(randomBytes)
 	if err != nil {
 		t.Errorf("rand.Read threw an error: %s", err)
 		return
@@ -329,7 +329,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 
 	d := PlainText{
 		plaintext:      append(randomBytes, base...),
-		CryptoMaterial: CryptoMaterial{key: key},
+		CryptoMaterial: CryptoMaterial{key: keyByteArray},
 	}
 
 	c, err := Encrypt(MT, d)
@@ -337,28 +337,34 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
+
 	randomByteCount := len(c.ciphertext) - len(base)
 	merseeneValueSlice := FlexibleXor(c.ciphertext[randomByteCount:len(c.ciphertext)], base)
-
+	mersenneNumberBytes := 4 // each mersenne number is 32 bits long, which is 4 bytes of keystream
 	var success bool
-	const MersenneSeedSpace = 65536
 
+	// try all the possible keys until we find one that generates the known sequence in merseeneValueSlice
 	for i := 0; i < MersenneSeedSpace; i++ {
 		m := NewMersenneTwister()
 		m.Seed(i)
-		size := len(c.ciphertext)/mersenneStreamBlockSize + 1
-		keyGuess := make([]byte, size*mersenneStreamBlockSize)
-		numbersToGenerate := size * mersenneStreamBlockSize / 4 // each mersenne number gives us 4 bytes of the key
-		for i := 0; i < numbersToGenerate; i++ {
-			binary.LittleEndian.PutUint32(keyGuess[(i*4):], m.Uint32())
+
+		size := len(c.ciphertext)/mersenneStreamBlockSize
+		if len(c.ciphertext) % mersenneStreamBlockSize > 0 {
+			size++
 		}
 
-		if string(merseeneValueSlice) == string(keyGuess[randomByteCount:len(c.ciphertext)]) {
+		comparison := make([]byte, size*mersenneStreamBlockSize)
+		numbersNeeded := size * mersenneStreamBlockSize / mersenneNumberBytes
+
+		for i := 0; i < numbersNeeded; i++ {
+			binary.LittleEndian.PutUint32(comparison[(i*mersenneNumberBytes):], m.Uint32())
+		}
+		if string(merseeneValueSlice) == string(comparison[randomByteCount:len(c.ciphertext)]) {
 			success = true
 			break
 		}
 	}
 	if !success {
-		t.Errorf("Key not found. Should have been: %s\n", key)
+		t.Errorf("Key not found. Should have been: %s\n", keyByteArray)
 	}
 }

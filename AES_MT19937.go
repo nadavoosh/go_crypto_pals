@@ -28,8 +28,9 @@ func decryptMT(e EncryptedText) (PlainText, error) {
 
 func getMTKeystream(m *MT19937) []byte {
 	keystream := make([]byte, mersenneStreamBlockSize)
-	for i := 0; i < mersenneStreamBlockSize/4; i++ {
-		binary.LittleEndian.PutUint32(keystream[(i*4):], m.Uint32())
+	mersenneNumberBytes := 4 // each mersenne number is 32 bits long, which is 4 bytes of keystream
+	for i := 0; i < mersenneStreamBlockSize/mersenneNumberBytes; i++ {
+		binary.LittleEndian.PutUint32(keystream[(i*mersenneNumberBytes):], m.Uint32())
 	}
 	return keystream
 }
