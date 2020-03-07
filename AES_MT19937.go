@@ -28,11 +28,9 @@ func decryptMT(e EncryptedText) (PlainText, error) {
 
 func getMTKeystream(m *MT19937) []byte {
 	keystream := make([]byte, mersenneStreamBlockSize)
-
-	// TODO: loop here instead of repeating
-	binary.LittleEndian.PutUint32(keystream[0:], m.Uint32())
-	binary.LittleEndian.PutUint32(keystream[4:], m.Uint32())
-
+	for i := 0; i < mersenneStreamBlockSize/4; i++ {
+		binary.LittleEndian.PutUint32(keystream[(i*4):], m.Uint32())
+	}
 	return keystream
 }
 

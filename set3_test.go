@@ -320,8 +320,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		return
 	}
 	base := bytes.Repeat(ByteA, 14)
-	// randomBytes := make([]byte, mathRand.Intn(5)+5)
-	randomBytes := make([]byte, 2)
+	randomBytes := make([]byte, mathRand.Intn(5)+5)
 	_, err = rand.Read(randomBytes)
 	if err != nil {
 		t.Errorf("rand.Read threw an error: %s", err)
@@ -339,7 +338,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		return
 	}
 	randomByteCount := len(c.ciphertext) - len(base)
-	merseeneValueSlice := FlexibleXor(c.ciphertext[randomByteCount:], base)
+	merseeneValueSlice := FlexibleXor(c.ciphertext[randomByteCount:len(c.ciphertext)], base)
 
 	var success bool
 	const MersenneSeedSpace = 65536
@@ -347,15 +346,14 @@ func TestBreakMT19937Encryption(t *testing.T) {
 	for i := 0; i < MersenneSeedSpace; i++ {
 		m := NewMersenneTwister()
 		m.Seed(i)
-		keyGuess := make([]byte, 16)
+		size := len(c.ciphertext)/mersenneStreamBlockSize + 1*(len(c.ciphertext)%mersenneStreamBlockSize)
+		keyGuess := make([]byte, size*mersenneStreamBlockSize)
+		numbersToGenerate := size * mersenneStreamBlockSize / 4 // each mersenne number gives us 4 bytes of the key
+		for i := 0; i < numbersToGenerate; i++ {
+			binary.LittleEndian.PutUint32(keyGuess[(i*4):], m.Uint32())
+		}
 
-		// TODO: loop here instead of repeating
-		binary.LittleEndian.PutUint32(keyGuess[0:], m.Uint32())
-		binary.LittleEndian.PutUint32(keyGuess[4:], m.Uint32())
-		binary.LittleEndian.PutUint32(keyGuess[8:], m.Uint32())
-		binary.LittleEndian.PutUint32(keyGuess[12:], m.Uint32())
-
-		if string(merseeneValueSlice) == string(keyGuess[randomByteCount:]) {
+		if string(merseeneValueSlice) == string(keyGuess[randomByteCount:len(c.ciphertext)]) {
 			success = true
 			break
 		}
