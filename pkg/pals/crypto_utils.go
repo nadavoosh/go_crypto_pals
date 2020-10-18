@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"crypto/rand"
@@ -9,7 +9,7 @@ import (
 var FixedKey = GenerateKey()
 var FixedBytes = GenerateRandomBytes()
 
-// GenerateKey returns a random key
+// GenerateKey returns a random Key
 func GenerateKey() []byte {
 	k, _ := generateRandomBlock()
 	return k

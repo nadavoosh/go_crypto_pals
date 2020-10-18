@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"crypto/aes"
@@ -12,8 +12,8 @@ func int64ToByteArray(i int64) []byte {
 	return b
 }
 
-func getKeystream(key []byte, nonce, count int64) ([]byte, error) {
-	c, err := aes.NewCipher(key)
+func getKeystream(Key []byte, nonce, count int64) ([]byte, error) {
+	c, err := aes.NewCipher(Key)
 	if err != nil {
 		return nil, err
 	}
@@ -22,31 +22,31 @@ func getKeystream(key []byte, nonce, count int64) ([]byte, error) {
 }
 
 func encryptCTC(d PlainText) (EncryptedText, error) {
-	e := EncryptedText{CryptoMaterial: CryptoMaterial{key: d.key}}
-	blocks := chunk(d.plaintext, aes.BlockSize)
+	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: d.Key}}
+	blocks := chunk(d.Plaintext, aes.BlockSize)
 	for i, block := range blocks {
-		keystream, err := getKeystream(d.key, d.nonce, int64(i))
+		Keystream, err := getKeystream(d.Key, d.Nonce, int64(i))
 		if err != nil {
 			return e, err
 		}
-		trimmedKeystream := keystream[:len(block)]
+		trimmedKeystream := Keystream[:len(block)]
 		cipher := FlexibleXor(block, trimmedKeystream)
-		e.ciphertext = append(e.ciphertext, cipher...)
+		e.Ciphertext = append(e.Ciphertext, cipher...)
 	}
 	return e, nil
 }
 
 func decryptCTC(e EncryptedText) (PlainText, error) {
-	d := PlainText{CryptoMaterial: CryptoMaterial{key: e.key}}
-	blocks := chunk(e.ciphertext, aes.BlockSize)
+	d := PlainText{CryptoMaterial: CryptoMaterial{Key: e.Key}}
+	blocks := chunk(e.Ciphertext, aes.BlockSize)
 	for i, block := range blocks {
-		keystream, err := getKeystream(d.key, e.nonce, int64(i))
+		Keystream, err := getKeystream(d.Key, e.Nonce, int64(i))
 		if err != nil {
 			return d, err
 		}
-		trimmedKeystream := keystream[:len(block)]
+		trimmedKeystream := Keystream[:len(block)]
 		plain := FlexibleXor(block, trimmedKeystream)
-		d.plaintext = append(d.plaintext, plain...)
+		d.Plaintext = append(d.Plaintext, plain...)
 	}
 	return d, nil
 }

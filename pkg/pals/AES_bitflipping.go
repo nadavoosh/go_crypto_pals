@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"bytes"
@@ -19,10 +19,10 @@ func unescape(input string) string {
 func EncryptUserData(input []byte) (EncryptedText, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
-	plaintext := append(prepend, append(escape(string(input)), after...)...)
+	Plaintext := append(prepend, append(escape(string(input)), after...)...)
 	return Encrypt(CBC, PlainText{
-		plaintext:      plaintext,
-		CryptoMaterial: CryptoMaterial{key: FixedKey},
+		Plaintext:      Plaintext,
+		CryptoMaterial: CryptoMaterial{Key: FixedKey},
 	})
 }
 
@@ -65,7 +65,7 @@ func DetectAdminString(e EncryptedText) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	m := parseString(string(plain.plaintext))
+	m := parseString(string(plain.Plaintext))
 	if _, ok := m["admin"]; ok {
 		return true, nil
 	}
@@ -76,8 +76,8 @@ func FlipBitsToHide(block []byte) []byte {
 	return FlexibleXor(block, AByteBlock())
 }
 
-func ModifyCiphertextForAdmin(ciphertext []byte) ([]byte, error) {
-	chunks := ChunkForAES(ciphertext)
+func ModifyCiphertextForAdmin(Ciphertext []byte) ([]byte, error) {
+	chunks := ChunkForAES(Ciphertext)
 	chunkToFlip := 2 // TODO: calculate this value, by figuring out the length of prepended bytes
 	flippedCiphertext := FlipBitsToHide(chunks[chunkToFlip])
 	chunks[chunkToFlip] = flippedCiphertext

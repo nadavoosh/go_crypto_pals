@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"bytes"
@@ -24,12 +24,12 @@ func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 	case ECB:
 		return encryptECB(d)
 	case CBC:
-		if d.iv == nil {
-			iv, err := generateRandomBlock()
+		if d.IV == nil {
+			IV, err := generateRandomBlock()
 			if err != nil {
 				return EncryptedText{}, err
 			}
-			d.iv = iv
+			d.IV = IV
 		}
 		return encryptCBC(d)
 	case CTC:
@@ -44,16 +44,16 @@ func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 	switch mode {
 	case ECB:
-		return decryptECB(e)
+		return DecryptECB(e)
 	case CBC:
-		if e.iv == nil {
-			iv, err := generateRandomBlock()
+		if e.IV == nil {
+			IV, err := generateRandomBlock()
 			if err != nil {
 				return PlainText{}, err
 			}
-			e.iv = iv
+			e.IV = IV
 		}
-		return decryptCBC(e)
+		return DecryptCBC(e)
 	case CTC:
 		return decryptCTC(e)
 	case MT:
@@ -63,22 +63,22 @@ func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 	}
 }
 
-func encryptSingleBlock(cipher cipher.Block, plaintext []byte) []byte {
+func encryptSingleBlock(cipher cipher.Block, Plaintext []byte) []byte {
 	dst := make([]byte, aes.BlockSize)
-	cipher.Encrypt(dst, plaintext)
+	cipher.Encrypt(dst, Plaintext)
 	return dst
 }
 
-func decryptSingleBlock(cipher cipher.Block, ciphertext []byte) []byte {
+func decryptSingleBlock(cipher cipher.Block, Ciphertext []byte) []byte {
 	dst := make([]byte, aes.BlockSize)
-	cipher.Decrypt(dst, ciphertext)
+	cipher.Decrypt(dst, Ciphertext)
 	return dst
 }
 
 func generateRandomBlock() ([]byte, error) {
-	key := make([]byte, aes.BlockSize)
-	_, err := rand.Read(key)
-	return key, err
+	Key := make([]byte, aes.BlockSize)
+	_, err := rand.Read(Key)
+	return Key, err
 }
 
 func addRandomBytes(p []byte) ([]byte, error) {
@@ -98,7 +98,7 @@ func addRandomBytes(p []byte) ([]byte, error) {
 }
 
 func GuessAESMode(e EncryptedText) AESMode {
-	if smellsOfECB(e.ciphertext) {
+	if SmellsOfECB(e.Ciphertext) {
 		return ECB
 	}
 	return CBC
@@ -115,7 +115,7 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		diff := len(next.ciphertext) - len(initial.ciphertext)
+		diff := len(next.Ciphertext) - len(initial.Ciphertext)
 		if diff > 0 {
 			return diff, nil
 		}
@@ -134,8 +134,8 @@ func AByteBlock() []byte {
 
 type Encryptor struct {
 	mode      AESMode
-	key       []byte
-	plaintext []byte
+	Key       []byte
+	Plaintext []byte
 }
 
 func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
@@ -143,15 +143,15 @@ func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
 	if err != nil {
 		return Encryptor{}, err
 	}
-	key, err := generateRandomBlock()
+	Key, err := generateRandomBlock()
 	if err != nil {
 		return Encryptor{}, err
 	}
-	return Encryptor{mode: mode, plaintext: b, key: key}, nil
+	return Encryptor{mode: mode, Plaintext: b, Key: Key}, nil
 }
 
 func (o Encryptor) getPlaintext() PlainText {
-	return PlainText{plaintext: o.plaintext, CryptoMaterial: CryptoMaterial{key: o.key}}
+	return PlainText{Plaintext: o.Plaintext, CryptoMaterial: CryptoMaterial{Key: o.Key}}
 }
 
 func (o Encryptor) Encrypt() (EncryptedText, error) {
