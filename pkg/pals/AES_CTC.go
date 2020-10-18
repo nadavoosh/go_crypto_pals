@@ -3,6 +3,8 @@ package pals
 import (
 	"crypto/aes"
 	"encoding/binary"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 	// "fmt"
 )
 
@@ -30,7 +32,7 @@ func encryptCTC(d PlainText) (EncryptedText, error) {
 			return e, err
 		}
 		trimmedKeystream := Keystream[:len(block)]
-		cipher := FlexibleXor(block, trimmedKeystream)
+		cipher := utils.FlexibleXor(block, trimmedKeystream)
 		e.Ciphertext = append(e.Ciphertext, cipher...)
 	}
 	return e, nil
@@ -45,7 +47,7 @@ func decryptCTC(e EncryptedText) (PlainText, error) {
 			return d, err
 		}
 		trimmedKeystream := Keystream[:len(block)]
-		plain := FlexibleXor(block, trimmedKeystream)
+		plain := utils.FlexibleXor(block, trimmedKeystream)
 		d.Plaintext = append(d.Plaintext, plain...)
 	}
 	return d, nil

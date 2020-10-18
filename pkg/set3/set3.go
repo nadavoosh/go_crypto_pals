@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 const mersenneNumberBytes = 4 // each mersenne number is 32 bits long, which is 4 bytes of Keystream
@@ -22,7 +23,7 @@ func padAndEncryptFromSet() (pals.EncryptedText, error) {
 		"MDAwMDA5aXRoIG15IHJhZy10b3AgZG93biBzbyBteSBoYWlyIGNhbiBibG93",
 	}
 	// Plaintext, err := ParseBase64(strings[rand.Intn(len(strings)-1)])
-	Plaintext, err := pals.ParseBase64(strings[0])
+	Plaintext, err := utils.ParseBase64(strings[0])
 	if err != nil {
 		return pals.EncryptedText{}, err
 	}

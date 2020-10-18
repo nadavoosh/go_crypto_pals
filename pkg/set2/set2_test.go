@@ -8,6 +8,7 @@ import (
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/set1"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func TestPKCS7Padding(t *testing.T) {
@@ -63,7 +64,7 @@ func TestEncryptAESCBC(t *testing.T) {
 
 func TestEncryptCBC(t *testing.T) {
 	filename := "../../challenges/challenge10.txt"
-	decoded, err := pals.ReadBase64File(filename)
+	decoded, err := utils.ReadBase64File(filename)
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
@@ -101,7 +102,7 @@ func TestNewEncryptor(t *testing.T) {
 var Base64EncodedString = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
 
 func TestDecryptOracle(t *testing.T) {
-	parsed, err := pals.ParseBase64(Base64EncodedString)
+	parsed, err := utils.ParseBase64(Base64EncodedString)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
@@ -161,7 +162,7 @@ func TestCreateAdminProfile(t *testing.T) {
 }
 
 func TestDecryptOracleHarder(t *testing.T) {
-	parsed, err := pals.ParseBase64(Base64EncodedString)
+	parsed, err := utils.ParseBase64(Base64EncodedString)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 		return

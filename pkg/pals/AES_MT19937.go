@@ -2,6 +2,8 @@ package pals
 
 import (
 	"encoding/binary"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 const MersenneStreamBlockSize = 8
@@ -44,7 +46,7 @@ func doMT(orig []byte, m *MT19937) []byte {
 	blocks := chunk(orig, MersenneStreamBlockSize)
 	for _, block := range blocks {
 		Keystream := getMTKeystream(m)
-		plain := FlexibleXor(block, Keystream[:len(block)])
+		plain := utils.FlexibleXor(block, Keystream[:len(block)])
 		result = append(result, plain...)
 	}
 	return result

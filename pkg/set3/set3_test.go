@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func TestCBCPaddingValidation(t *testing.T) {
@@ -50,7 +51,7 @@ func TestCBCPaddingOracle(t *testing.T) {
 }
 
 func TestCTRCipher(t *testing.T) {
-	cipherterxt, err := pals.ParseBase64("L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==")
+	cipherterxt, err := utils.ParseBase64("L77na/nrFsKvynd6HzOoG7GHTLXsTVu9qvY/2syLXzhPweyyMTJULu/6/kXX0KSvoOLSFQ==")
 	if err != nil {
 		t.Errorf("ParseBase64 threw an error: %s", err)
 		return
@@ -96,7 +97,7 @@ func min(a, b int) int {
 func TestBreakCTRWithGuessing(t *testing.T) {
 	t.Skip("Guessing challenge is meant to be run interactIVely & iteratIVely.")
 	filename := "../../challenges/challenge19.txt"
-	lines, err := pals.ScanFile(filename)
+	lines, err := utils.ScanFile(filename)
 	if err != nil {
 		t.Errorf("ScanFile threw an error: %s", err)
 		return
@@ -107,7 +108,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 	// guessed iteratIVely by looking at what prints and finding one letter to try next:
 	KeystreamGuess := []byte{61, 119, 199, 221, 251, 12, 179, 47, 28, 48, 171, 47, 152, 235, 153, 236, 113, 47, 144, 28, 151, 200, 54, 228, 104, 190, 165, 111, 120, 237, 239, 125, 179, 228, 122, 201, 172, 60}
 	for _, PlaintextLine := range lines {
-		decoded, err := pals.ParseBase64(PlaintextLine)
+		decoded, err := utils.ParseBase64(PlaintextLine)
 		if err != nil {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
@@ -122,7 +123,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			return
 		}
 		l := min(len(decoded), len(KeystreamGuess))
-		PlaintextBytes := pals.FlexibleXor(KeystreamGuess[:l], c.Ciphertext)
+		PlaintextBytes := utils.FlexibleXor(KeystreamGuess[:l], c.Ciphertext)
 		fmt.Println(PlaintextBytes[l:])
 		fmt.Println(string(PlaintextBytes))
 	}
@@ -131,7 +132,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 
 func TestBreakCTRStatistically(t *testing.T) {
 	filename := "../../challenges/challenge20.txt"
-	lines, err := pals.ScanFile(filename)
+	lines, err := utils.ScanFile(filename)
 	if err != nil {
 		t.Errorf("ScanFile threw an error: %s", err)
 		return
@@ -142,7 +143,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 	rawCiphertexts := [][]byte{}
 	minLen := 100000
 	for _, PlaintextLine := range lines {
-		decoded, err := pals.ParseBase64(PlaintextLine)
+		decoded, err := utils.ParseBase64(PlaintextLine)
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
 			return
@@ -172,7 +173,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 		return
 	}
 	for i, line := range lines {
-		actualBytes, err := pals.ParseBase64(line)
+		actualBytes, err := utils.ParseBase64(line)
 		if err != nil {
 			t.Errorf("ParseBase64(%q) threw an error: %s", filename, err)
 			return
@@ -308,7 +309,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 	}
 
 	randomByteCount := len(c.Ciphertext) - len(base)
-	merseeneValueSlice := pals.FlexibleXor(c.Ciphertext[randomByteCount:len(c.Ciphertext)], base)
+	merseeneValueSlice := utils.FlexibleXor(c.Ciphertext[randomByteCount:len(c.Ciphertext)], base)
 	var success bool
 
 	// try all the possible Keys until we find one that generates the known sequence in merseeneValueSlice
