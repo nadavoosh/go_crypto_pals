@@ -1,4 +1,4 @@
-package pals
+package mersenne
 
 const (
 	w         = 32
@@ -29,7 +29,7 @@ type MT19937 struct {
 // New allocates a new instance of the 64bit Mersenne Twister.
 // A seed can be set using the .Seed() or .SeedFromSlice() methods.
 // If no seed is set explicitly, a default seed is used instead.
-func NewMersenneTwister() *MT19937 {
+func New() *MT19937 {
 	res := &MT19937{
 		State: make([]uint32, n),
 		Index: notSeeded,

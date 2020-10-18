@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -12,7 +13,7 @@ type CryptoMaterial struct {
 	Key   []byte
 	IV    []byte
 	Nonce int64
-	MT    *MT19937
+	MT    *mersenne.MT19937
 }
 
 type EncryptedText struct {
