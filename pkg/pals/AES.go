@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"fmt"
 	mathRand "math/rand"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 type AESMode int
@@ -25,7 +27,7 @@ func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 		return encryptECB(d)
 	case CBC:
 		if d.IV == nil {
-			IV, err := generateRandomBlock()
+			IV, err := utils.GenerateRandomBlock()
 			if err != nil {
 				return EncryptedText{}, err
 			}
@@ -47,7 +49,7 @@ func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 		return DecryptECB(e)
 	case CBC:
 		if e.IV == nil {
-			IV, err := generateRandomBlock()
+			IV, err := utils.GenerateRandomBlock()
 			if err != nil {
 				return PlainText{}, err
 			}
@@ -73,12 +75,6 @@ func decryptSingleBlock(cipher cipher.Block, Ciphertext []byte) []byte {
 	dst := make([]byte, aes.BlockSize)
 	cipher.Decrypt(dst, Ciphertext)
 	return dst
-}
-
-func generateRandomBlock() ([]byte, error) {
-	Key := make([]byte, aes.BlockSize)
-	_, err := rand.Read(Key)
-	return Key, err
 }
 
 func addRandomBytes(p []byte) ([]byte, error) {
@@ -129,7 +125,7 @@ func ChunkForAES(b []byte) [][]byte {
 }
 
 func AByteBlock() []byte {
-	return bytes.Repeat(ByteA, aes.BlockSize)
+	return bytes.Repeat(utils.ByteA, aes.BlockSize)
 }
 
 type Encryptor struct {
@@ -143,7 +139,7 @@ func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
 	if err != nil {
 		return Encryptor{}, err
 	}
-	Key, err := generateRandomBlock()
+	Key, err := utils.GenerateRandomBlock()
 	if err != nil {
 		return Encryptor{}, err
 	}

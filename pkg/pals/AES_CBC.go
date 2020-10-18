@@ -3,6 +3,8 @@ package pals
 import (
 	"crypto/aes"
 	"fmt"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func encryptCBC(d PlainText) (EncryptedText, error) {
@@ -15,7 +17,7 @@ func encryptCBC(d PlainText) (EncryptedText, error) {
 		return e, err
 	}
 	for _, block := range blocks {
-		cipher = encryptSingleBlock(c, FlexibleXor(block, cipher))
+		cipher = encryptSingleBlock(c, utils.FlexibleXor(block, cipher))
 		e.Ciphertext = append(e.Ciphertext, cipher...)
 	}
 	return e, nil
@@ -33,7 +35,7 @@ func DecryptCBC(e EncryptedText) (PlainText, error) {
 		if err != nil {
 			return d, err
 		}
-		plain, err := FixedXor(decryptSingleBlock(c, block), priorCiphertext)
+		plain, err := utils.FixedXor(decryptSingleBlock(c, block), priorCiphertext)
 		if err != nil {
 			return d, err
 		}

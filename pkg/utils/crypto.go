@@ -1,6 +1,7 @@
-package pals
+package utils
 
 import (
+	"crypto/aes"
 	"crypto/rand"
 	mathRand "math/rand"
 	"time"
@@ -11,8 +12,14 @@ var FixedBytes = GenerateRandomBytes()
 
 // GenerateKey returns a random Key
 func GenerateKey() []byte {
-	k, _ := generateRandomBlock()
+	k, _ := GenerateRandomBlock()
 	return k
+}
+
+func GenerateRandomBlock() ([]byte, error) {
+	Key := make([]byte, aes.BlockSize)
+	_, err := rand.Read(Key)
+	return Key, err
 }
 
 func GenerateRandomBytes() []byte {

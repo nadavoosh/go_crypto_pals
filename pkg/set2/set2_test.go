@@ -8,6 +8,7 @@ import (
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/set1"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func TestPKCS7Padding(t *testing.T) {
@@ -63,7 +64,7 @@ func TestEncryptAESCBC(t *testing.T) {
 
 func TestEncryptCBC(t *testing.T) {
 	filename := "../../challenges/challenge10.txt"
-	decoded, err := pals.ReadBase64File(filename)
+	decoded, err := utils.ReadBase64File(filename)
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
@@ -101,7 +102,7 @@ func TestNewEncryptor(t *testing.T) {
 var Base64EncodedString = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
 
 func TestDecryptOracle(t *testing.T) {
-	parsed, err := pals.ParseBase64(Base64EncodedString)
+	parsed, err := utils.ParseBase64(Base64EncodedString)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
@@ -117,7 +118,7 @@ func TestDecryptOracle(t *testing.T) {
 }
 func TestParseCookie(t *testing.T) {
 	in := "foo=bar&baz=qux&zap=zazzle"
-	got := pals.ParseCookie(in)
+	got := parseCookie(in)
 	if got["foo"] != "bar" || got["baz"] != "qux" || got["zap"] != "zazzle" {
 		t.Errorf("ParseCookie gave some bad results: %s", got)
 	}
@@ -125,7 +126,7 @@ func TestParseCookie(t *testing.T) {
 
 func TestEncryptProfile(t *testing.T) {
 	email := []byte("foo@bar.com")
-	enc, err := pals.EncryptedProfileFor(email)
+	enc, err := encryptedProfileFor(email)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
@@ -133,7 +134,7 @@ func TestEncryptProfile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 	}
-	cookie := pals.ParseCookie(string(role.Plaintext))
+	cookie := parseCookie(string(role.Plaintext))
 	if cookie["role"] != "user" || cookie["email"] != string(email) || cookie["uid"] != "10" {
 		t.Errorf("ParseCookie for %s returned: %s", email, role.Plaintext)
 	}
@@ -141,7 +142,7 @@ func TestEncryptProfile(t *testing.T) {
 
 func TestCreateAdminProfile(t *testing.T) {
 	email := "foo@bar.com"
-	enc, err := pals.BuildAdminProfile(email)
+	enc, err := buildAdminProfile(email)
 
 	if err != nil {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
@@ -152,7 +153,7 @@ func TestCreateAdminProfile(t *testing.T) {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
-	cookie := pals.ParseCookie(string(role.Plaintext))
+	cookie := parseCookie(string(role.Plaintext))
 
 	if cookie["role"] != "admin" {
 		t.Errorf(string(role.Plaintext))
@@ -161,7 +162,7 @@ func TestCreateAdminProfile(t *testing.T) {
 }
 
 func TestDecryptOracleHarder(t *testing.T) {
-	parsed, err := pals.ParseBase64(Base64EncodedString)
+	parsed, err := utils.ParseBase64(Base64EncodedString)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 		return

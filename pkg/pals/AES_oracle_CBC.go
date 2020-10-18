@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"fmt"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func GetValidationFnForOracle(Key []byte) ValidationFn {
@@ -33,7 +35,7 @@ func (c CBCPaddingOracle) DecryptCBCPadding() ([]byte, error) {
 			}
 			Plaintext = append([]byte{b}, Plaintext...)
 		}
-		next, err := FixedXor(prevCipher, Plaintext)
+		next, err := utils.FixedXor(prevCipher, Plaintext)
 		if err != nil {
 			return nil, err
 		}
@@ -44,7 +46,7 @@ func (c CBCPaddingOracle) DecryptCBCPadding() ([]byte, error) {
 }
 func (c CBCPaddingOracle) calculateNextByte(block, Plaintext []byte, j int) (byte, error) {
 	base := bytes.Repeat([]byte{0}, aes.BlockSize-j)
-	soFar := FlexibleXor(Plaintext, bytes.Repeat([]byte{byte(j)}, len(Plaintext)))
+	soFar := utils.FlexibleXor(Plaintext, bytes.Repeat([]byte{byte(j)}, len(Plaintext)))
 	for i := 0; i < 256; i++ {
 		filler := append(append(base, byte(i)), soFar...)
 		paddingCorrect, err := c.ValidationFn(append(filler, block...), c.IV)
@@ -53,7 +55,7 @@ func (c CBCPaddingOracle) calculateNextByte(block, Plaintext []byte, j int) (byt
 		}
 		if paddingCorrect {
 			require := append(base, bytes.Repeat([]byte{byte(j)}, j)...)
-			g, err := FixedXor(filler, require)
+			g, err := utils.FixedXor(filler, require)
 			if err != nil {
 				return byte(0), err
 			}

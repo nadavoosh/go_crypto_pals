@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"strings"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 // RepeatingKeyXor sequentially applies each byte of the Key to the Plaintext and returns the result hex encoded
@@ -15,7 +17,7 @@ func RepeatingKeyXor(plain, Key string) (string, error) {
 }
 
 func RepeatingKeyXorBytes(p, Key []byte) ([]byte, error) {
-	b, err := FixedXor(p, RepeatBytesToLegnth(Key, len(p)))
+	b, err := utils.FixedXor(p, RepeatBytesToLegnth(Key, len(p)))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -176,7 +178,7 @@ func HemmingDistance(s1, s2 string) (int, error) {
 
 func hemmingDistanceBytes(b1, b2 []byte) (int, error) {
 	var score int
-	if err := AssertEqualLen(b1, b2); err != nil {
+	if err := utils.AssertEqualLen(b1, b2); err != nil {
 		return 0, err
 	}
 	for i := range b1 {

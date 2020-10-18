@@ -5,22 +5,23 @@ import (
 	"testing"
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func TestHexToBase64(t *testing.T) {
-	in := pals.HexEncoded{HexString: "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"}
+	in := utils.HexEncoded{HexString: "49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d"}
 	want := "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
-	got := pals.HexToBase64(in)
+	got := utils.HexToBase64(in)
 	if got != want {
 		t.Errorf("ToBase64(%q) == %q, want %q", in, got, want)
 	}
 }
 
 func TestHexFixedXor(t *testing.T) {
-	in1 := pals.HexEncoded{HexString: "1c0111001f010100061a024b53535009181c"}
-	in2 := pals.HexEncoded{HexString: "686974207468652062756c6c277320657965"}
+	in1 := utils.HexEncoded{HexString: "1c0111001f010100061a024b53535009181c"}
+	in2 := utils.HexEncoded{HexString: "686974207468652062756c6c277320657965"}
 	want := "746865206b696420646f6e277420706c6179"
-	got, err := pals.HexFixedXor(in1, in2)
+	got, err := utils.HexFixedXor(in1, in2)
 	if err != nil {
 		t.Errorf("ToBase64(%q, %q) threw an error", in1, in2)
 	}
@@ -30,7 +31,7 @@ func TestHexFixedXor(t *testing.T) {
 }
 
 func TestSolveSingleByteXorCipherHex(t *testing.T) {
-	in := pals.HexEncoded{HexString: "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"}
+	in := utils.HexEncoded{HexString: "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"}
 	want := "Cooking MC's like a pound of bacon"
 	alsoWant := "X"
 	got, err := pals.SolveSingleByteXorCipherHex(in)
@@ -48,7 +49,7 @@ func TestSolveSingleByteXorCipherHex(t *testing.T) {
 func TestDetectSingleByteXorCipher(t *testing.T) {
 	filename := "../../challenges/challenge4.txt"
 	want := "Now that the party is jumping\n"
-	lines, err := pals.ScanFile(filename)
+	lines, err := utils.ScanFile(filename)
 	if err != nil {
 		t.Errorf("ScanFile(%q) threw an error", filename)
 	}
@@ -89,7 +90,7 @@ func TestHemmingDistance(t *testing.T) {
 func TestDecryptRepeatingKeyXor(t *testing.T) {
 	filename := "../../challenges/challenge6.txt"
 	wantKey := "Terminator X: Bring the noise"
-	lines, err := pals.ReadBase64File(filename)
+	lines, err := utils.ReadBase64File(filename)
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
@@ -107,12 +108,12 @@ func TestDecryptRepeatingKeyXor(t *testing.T) {
 
 func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 	filename := "../../challenges/challenge7.txt"
-	lines, err := pals.ScanFile(filename)
+	lines, err := utils.ScanFile(filename)
 	if err != nil {
 		t.Errorf("ScanFile(%q) threw an error: %s", filename, err)
 	}
 	key := "YELLOW SUBMARINE"
-	decoded, err := pals.ParseBase64(strings.Join(lines, ""))
+	decoded, err := utils.ParseBase64(strings.Join(lines, ""))
 	got, err := pals.DecryptECB(pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: []byte(key)}})
 	if err != nil {
 		t.Errorf("Decrypt_AES_ECB_b64(input) threw an error: %s", err)
@@ -125,13 +126,13 @@ func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 func TestDetectECBModeFromFile(t *testing.T) {
 	filename := "../../challenges/challenge8.txt"
 	want := "d880619740a8a19b7840a8a31c810a3d08649af70dc06f4fd5d2d69c744cd283e2dd052f6b641dbf9d11b0348542bb5708649af70dc06f4fd5d2d69c744cd2839475c9dfdbc1d46597949d9c7e82bf5a08649af70dc06f4fd5d2d69c744cd28397a93eab8d6aecd566489154789a6b0308649af70dc06f4fd5d2d69c744cd283d403180c98c8f6db1f2a3f9c4040deb0ab51b29933f2c123c58386b06fba186a"
-	lines, err := pals.ScanFile(filename)
+	lines, err := utils.ScanFile(filename)
 	if err != nil {
 		t.Errorf("ScanFile(%q) threw an error: %s", filename, err)
 	}
-	var ECBs []pals.HexEncoded
+	var ECBs []utils.HexEncoded
 	for _, l := range lines {
-		h := pals.HexEncoded{HexString: l}
+		h := utils.HexEncoded{HexString: l}
 		if pals.SmellsOfECB(h.GetBytes()) {
 			ECBs = append(ECBs, h)
 		}

@@ -4,6 +4,8 @@ import (
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 type CryptoMaterial struct {
@@ -16,7 +18,7 @@ type CryptoMaterial struct {
 type EncryptedText struct {
 	CryptoMaterial
 	Ciphertext []byte
-	padding    Padding
+	Padding    Padding
 }
 
 type PlainText struct {
@@ -41,7 +43,7 @@ func (d PlainText) minimize() float64 {
 }
 
 // SolveSingleByteXorCipherHex examines the input XORed against a single character, and returns the most likely original text and Key, based on english character frequency
-func SolveSingleByteXorCipherHex(h HexEncoded) (PlainText, error) {
+func SolveSingleByteXorCipherHex(h utils.HexEncoded) (PlainText, error) {
 	return SolveSingleByteXorCipher(h.GetBytes())
 }
 
@@ -73,7 +75,7 @@ func FillByteSlice(l int, c byte) []byte {
 
 func singleByteXor(h []byte, c byte) ([]byte, error) {
 	repeated := FillByteSlice(len(h), c)
-	return FixedXor(h, repeated)
+	return utils.FixedXor(h, repeated)
 }
 
 func getLetterFreqMapForEnglish() map[string]float64 {
@@ -134,7 +136,7 @@ func getScore(text []byte) float64 {
 func DetectSingleByteXorCipher(lines []string) (PlainText, error) {
 	var res PlainText
 	for _, h := range lines {
-		s, err := SolveSingleByteXorCipherHex(HexEncoded{HexString: h})
+		s, err := SolveSingleByteXorCipherHex(utils.HexEncoded{HexString: h})
 		if err != nil {
 			return s, err
 		}

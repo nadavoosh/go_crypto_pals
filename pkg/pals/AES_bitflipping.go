@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func escape(input string) []byte {
@@ -22,7 +24,7 @@ func EncryptUserData(input []byte) (EncryptedText, error) {
 	Plaintext := append(prepend, append(escape(string(input)), after...)...)
 	return Encrypt(CBC, PlainText{
 		Plaintext:      Plaintext,
-		CryptoMaterial: CryptoMaterial{Key: FixedKey},
+		CryptoMaterial: CryptoMaterial{Key: utils.FixedKey},
 	})
 }
 
@@ -73,7 +75,7 @@ func DetectAdminString(e EncryptedText) (bool, error) {
 }
 
 func FlipBitsToHide(block []byte) []byte {
-	return FlexibleXor(block, AByteBlock())
+	return utils.FlexibleXor(block, AByteBlock())
 }
 
 func ModifyCiphertextForAdmin(Ciphertext []byte) ([]byte, error) {

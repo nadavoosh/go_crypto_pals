@@ -12,7 +12,7 @@ func DecryptECB(e EncryptedText) (PlainText, error) {
 	for _, block := range blocks {
 		Plaintext = append(Plaintext, decryptSingleBlock(cipher, block)...)
 	}
-	if e.padding == PKCS {
+	if e.Padding == PKCS {
 		Plaintext = RemovePKCSPadding(Plaintext)
 	}
 	return PlainText{Plaintext: Plaintext}, nil
@@ -29,7 +29,7 @@ func encryptECB(d PlainText) (EncryptedText, error) {
 	for _, block := range blocks {
 		Ciphertext = append(Ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{Ciphertext: Ciphertext, padding: PKCS, CryptoMaterial: CryptoMaterial{Key: d.Key}}, nil
+	return EncryptedText{Ciphertext: Ciphertext, Padding: PKCS, CryptoMaterial: CryptoMaterial{Key: d.Key}}, nil
 }
 
 func SmellsOfECB(b []byte) bool {

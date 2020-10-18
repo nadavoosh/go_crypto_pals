@@ -1,4 +1,4 @@
-package pals
+package utils
 
 import (
 	"bufio"
