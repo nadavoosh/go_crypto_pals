@@ -4,12 +4,13 @@ import (
 	"crypto/aes"
 	"fmt"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func encryptCBC(d PlainText) (EncryptedText, error) {
 	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: d.Key, IV: d.IV}}
-	padded := PKCSPadding(d.Plaintext, aes.BlockSize)
+	padded := padding.PKCSPadding(d.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	cipher := d.IV
 	c, err := aes.NewCipher(d.Key)
@@ -42,9 +43,9 @@ func DecryptCBC(e EncryptedText) (PlainText, error) {
 		d.Plaintext = append(d.Plaintext, plain...)
 		priorCiphertext = block
 	}
-	if !ValidatePKCS(d.Plaintext) {
+	if !padding.ValidatePKCS(d.Plaintext) {
 		return d, fmt.Errorf("Invalid Padding")
 	}
-	d.Plaintext = RemovePKCSPadding(d.Plaintext)
+	d.Plaintext = padding.RemovePKCSPadding(d.Plaintext)
 	return d, nil
 }

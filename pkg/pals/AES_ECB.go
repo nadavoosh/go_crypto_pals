@@ -1,6 +1,10 @@
 package pals
 
-import "crypto/aes"
+import (
+	"crypto/aes"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
+)
 
 func DecryptECB(e EncryptedText) (PlainText, error) {
 	cipher, err := aes.NewCipher(e.Key)
@@ -12,8 +16,8 @@ func DecryptECB(e EncryptedText) (PlainText, error) {
 	for _, block := range blocks {
 		Plaintext = append(Plaintext, decryptSingleBlock(cipher, block)...)
 	}
-	if e.Padding == PKCS {
-		Plaintext = RemovePKCSPadding(Plaintext)
+	if e.Padding == padding.PKCS {
+		Plaintext = padding.RemovePKCSPadding(Plaintext)
 	}
 	return PlainText{Plaintext: Plaintext}, nil
 }
@@ -24,12 +28,12 @@ func encryptECB(d PlainText) (EncryptedText, error) {
 		return EncryptedText{}, err
 	}
 	var Ciphertext []byte
-	padded := PKCSPadding(d.Plaintext, aes.BlockSize)
+	padded := padding.PKCSPadding(d.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	for _, block := range blocks {
 		Ciphertext = append(Ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{Ciphertext: Ciphertext, Padding: PKCS, CryptoMaterial: CryptoMaterial{Key: d.Key}}, nil
+	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS, CryptoMaterial: CryptoMaterial{Key: d.Key}}, nil
 }
 
 func SmellsOfECB(b []byte) bool {

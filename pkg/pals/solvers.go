@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -19,7 +20,7 @@ type CryptoMaterial struct {
 type EncryptedText struct {
 	CryptoMaterial
 	Ciphertext []byte
-	Padding    Padding
+	Padding    padding.Padding
 }
 
 type PlainText struct {

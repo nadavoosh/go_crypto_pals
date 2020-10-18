@@ -1,4 +1,4 @@
-package pals
+package padding
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ const (
 
 func RemovePKCSPadding(b []byte) []byte {
 	if b == nil {
-		fmt.Println("nil slice passed to RemovePKCSPadding")
+		fmt.Println("nil slice passed to padding.RemovePKCSPadding")
 	}
 	paddingCount := int(b[len(b)-1])
 	return b[:len(b)-paddingCount]

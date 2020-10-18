@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"fmt"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -42,7 +43,7 @@ func (c CBCPaddingOracle) DecryptCBCPadding() ([]byte, error) {
 		finalPlaintext = append(finalPlaintext, next...)
 		prevCipher = chunks[k]
 	}
-	return RemovePKCSPadding(finalPlaintext), nil
+	return padding.RemovePKCSPadding(finalPlaintext), nil
 }
 func (c CBCPaddingOracle) calculateNextByte(block, Plaintext []byte, j int) (byte, error) {
 	base := bytes.Repeat([]byte{0}, aes.BlockSize-j)
