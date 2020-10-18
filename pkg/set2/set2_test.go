@@ -118,7 +118,7 @@ func TestDecryptOracle(t *testing.T) {
 }
 func TestParseCookie(t *testing.T) {
 	in := "foo=bar&baz=qux&zap=zazzle"
-	got := pals.ParseCookie(in)
+	got := parseCookie(in)
 	if got["foo"] != "bar" || got["baz"] != "qux" || got["zap"] != "zazzle" {
 		t.Errorf("ParseCookie gave some bad results: %s", got)
 	}
@@ -126,7 +126,7 @@ func TestParseCookie(t *testing.T) {
 
 func TestEncryptProfile(t *testing.T) {
 	email := []byte("foo@bar.com")
-	enc, err := pals.EncryptedProfileFor(email)
+	enc, err := encryptedProfileFor(email)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
@@ -134,7 +134,7 @@ func TestEncryptProfile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 	}
-	cookie := pals.ParseCookie(string(role.Plaintext))
+	cookie := parseCookie(string(role.Plaintext))
 	if cookie["role"] != "user" || cookie["email"] != string(email) || cookie["uid"] != "10" {
 		t.Errorf("ParseCookie for %s returned: %s", email, role.Plaintext)
 	}
@@ -142,7 +142,7 @@ func TestEncryptProfile(t *testing.T) {
 
 func TestCreateAdminProfile(t *testing.T) {
 	email := "foo@bar.com"
-	enc, err := pals.BuildAdminProfile(email)
+	enc, err := buildAdminProfile(email)
 
 	if err != nil {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
@@ -153,7 +153,7 @@ func TestCreateAdminProfile(t *testing.T) {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
-	cookie := pals.ParseCookie(string(role.Plaintext))
+	cookie := parseCookie(string(role.Plaintext))
 
 	if cookie["role"] != "admin" {
 		t.Errorf(string(role.Plaintext))

@@ -18,7 +18,7 @@ type CryptoMaterial struct {
 type EncryptedText struct {
 	CryptoMaterial
 	Ciphertext []byte
-	padding    Padding
+	Padding    Padding
 }
 
 type PlainText struct {
