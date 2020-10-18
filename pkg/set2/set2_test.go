@@ -1,32 +1,19 @@
-package cryptopals
+package set2
 
 import (
 	"crypto/aes"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/set1"
 )
-
-func appendAndEncrypt(a []byte) EncryptionFn {
-	return func(plain []byte) (EncryptedText, error) {
-		d := PlainText{plaintext: append(plain, a...), CryptoMaterial: CryptoMaterial{key: FixedKey}}
-		return Encrypt(ECB, d)
-	}
-}
-
-func prependAndAppendAndEncrypt(a []byte) EncryptionFn {
-	return func(plain []byte) (EncryptedText, error) {
-		d := PlainText{plaintext: append(append(FixedBytes, plain...), a...), CryptoMaterial: CryptoMaterial{key: FixedKey}}
-		return Encrypt(ECB, d)
-	}
-}
-
-var YELLOWSUBMARINE = "YELLOW SUBMARINE"
 
 func TestPKCS7Padding(t *testing.T) {
 	in := YELLOWSUBMARINE
 	want := "YELLOW SUBMARINE\x04\x04\x04\x04"
-	got := PKCSPadString(in, 20)
+	got := pals.PKCSPadString(in, 20)
 	if got != want {
 		t.Errorf("PKCSPadding(%q) == %q, want %q", in, got, want)
 	}
@@ -35,7 +22,7 @@ func TestPKCS7Padding(t *testing.T) {
 func TestRemovePKCS7Padding(t *testing.T) {
 	want := YELLOWSUBMARINE
 	in := []byte("YELLOW SUBMARINE\x04\x04\x04\x04")
-	got := RemovePKCSPadding(in)
+	got := pals.RemovePKCSPadding(in)
 	if string(got) != want {
 		t.Errorf("RemovePKCSPadding(%q) == %q, want %q", in, got, want)
 	}
@@ -43,69 +30,69 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := Encrypt(ECB, PlainText{plaintext: []byte(FunkyMusic), CryptoMaterial: CryptoMaterial{key: key}})
+	c, err := pals.Encrypt(pals.ECB, pals.PlainText{Plaintext: []byte(set1.FunkyMusic), CryptoMaterial: pals.CryptoMaterial{Key: key}})
 	if err != nil {
-		t.Errorf("EncryptECB(%q) threw an error: %s", FunkyMusic, err)
+		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusic, err)
 	}
-	got, err := Decrypt(ECB, c)
+	got, err := pals.Decrypt(pals.ECB, c)
 	if err != nil {
-		t.Errorf("DecryptECB(%q) threw an error: %s", FunkyMusic, err)
+		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusic, err)
 	}
-	if string(got.plaintext) != FunkyMusic {
-		t.Errorf("DecryptECB(%q) == %q, want %q", FunkyMusic, got.plaintext, FunkyMusic)
+	if string(got.Plaintext) != set1.FunkyMusic {
+		t.Errorf("DecryptECB(%q) == %q, want %q", set1.FunkyMusic, got.Plaintext, set1.FunkyMusic)
 	}
 }
 
 func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
-	iv := RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := Encrypt(CBC, PlainText{plaintext: []byte(in), CryptoMaterial: CryptoMaterial{key: key, iv: iv}})
+	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
+	c, err := pals.Encrypt(pals.CBC, pals.PlainText{Plaintext: []byte(in), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}})
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	in2 := EncryptedText{ciphertext: []byte(c.ciphertext), CryptoMaterial: CryptoMaterial{key: key, iv: iv}}
-	got, err := Decrypt(CBC, in2)
+	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}
+	got, err := pals.Decrypt(pals.CBC, in2)
 	if err != nil {
-		t.Errorf("decryptCBC(%v) threw an error: %s", in2, err)
+		t.Errorf("DecryptCBC(%v) threw an error: %s", in2, err)
 	}
-	if string(got.plaintext) != in {
-		t.Errorf("decryptCBC(%q) == %q, want %q", in, string(got.plaintext), in)
+	if string(got.Plaintext) != in {
+		t.Errorf("DecryptCBC(%q) == %q, want %q", in, string(got.Plaintext), in)
 	}
 }
 
 func TestEncryptCBC(t *testing.T) {
-	filename := "challenges/challenge10.txt"
-	decoded, err := ReadBase64File(filename)
+	filename := "../../challenges/challenge10.txt"
+	decoded, err := pals.ReadBase64File(filename)
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
-	key := []byte("YELLOW SUBMARINE")
-	in := EncryptedText{ciphertext: decoded, CryptoMaterial: CryptoMaterial{key: key, iv: RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}}
-	got, err := decryptCBC(in)
+	Key := []byte("YELLOW SUBMARINE")
+	in := pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: Key, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}}
+	got, err := pals.DecryptCBC(in)
 	if err != nil {
-		t.Errorf("decryptCBC(%v) threw an error: %s", in, err)
+		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
-	if !TestEq(got.plaintext, RemovePKCSPadding([]byte(FunkyMusic))) {
-		t.Errorf("encryptCBC(%v) == %v, want %q", in, got, FunkyMusic)
+	if string(got.Plaintext) != string(set1.FunkyMusic) {
+		t.Errorf("encryptCBC(input) is %v, want %q", string(got.Plaintext), set1.FunkyMusic)
 	}
 }
 
 func TestNewEncryptor(t *testing.T) {
 	rand.Seed(time.Now().UnixNano())
-	mode := ECB
+	mode := pals.ECB
 	if rand.Float64() < float64(0.5) {
-		mode = CBC
+		mode = pals.CBC
 	}
-	e, err := NewEncryptor([]byte(FunkyMusic), mode)
+	e, err := pals.NewEncryptor([]byte(set1.FunkyMusic), mode)
 	if err != nil {
-		t.Errorf("NewEncryptor(%q) threw an error: %s", FunkyMusic, err)
+		t.Errorf("NewEncryptor(%q) threw an error: %s", set1.FunkyMusic, err)
 	}
-	plaintext, err := e.Encrypt()
+	Plaintext, err := e.Encrypt()
 	if err != nil {
-		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", FunkyMusic, err)
+		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", set1.FunkyMusic, err)
 	}
-	guessed := GuessAESMode(plaintext)
+	guessed := pals.GuessAESMode(Plaintext)
 	if guessed != mode {
 		t.Errorf("GuessAESMode returned incorrect mode: got %d, want %d", guessed, mode)
 	}
@@ -114,23 +101,23 @@ func TestNewEncryptor(t *testing.T) {
 var Base64EncodedString = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK"
 
 func TestDecryptOracle(t *testing.T) {
-	parsed, err := ParseBase64(Base64EncodedString)
+	parsed, err := pals.ParseBase64(Base64EncodedString)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 	}
-	oracle := EncryptionOracle{encrypt: appendAndEncrypt(parsed), mode: ECBAppend}
-	plaintext, err := oracle.Decrypt()
+	oracle := pals.EncryptionOracle{Encrypt: appendAndEncrypt(parsed), Mode: pals.ECBAppend}
+	Plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracle(f) threw an error: %s", err)
 	}
 	want := "Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n"
-	if string(plaintext) != want {
-		t.Errorf("DecryptOracle(f) returned incorrect plaintext: got:\n %q \n want \n %q", plaintext, want)
+	if string(Plaintext) != want {
+		t.Errorf("DecryptOracle(f) returned incorrect Plaintext: got:\n %q \n want \n %q", Plaintext, want)
 	}
 }
 func TestParseCookie(t *testing.T) {
 	in := "foo=bar&baz=qux&zap=zazzle"
-	got := ParseCookie(in)
+	got := pals.ParseCookie(in)
 	if got["foo"] != "bar" || got["baz"] != "qux" || got["zap"] != "zazzle" {
 		t.Errorf("ParseCookie gave some bad results: %s", got)
 	}
@@ -138,82 +125,82 @@ func TestParseCookie(t *testing.T) {
 
 func TestEncryptProfile(t *testing.T) {
 	email := []byte("foo@bar.com")
-	enc, err := EncryptedProfileFor(email)
+	enc, err := pals.EncryptedProfileFor(email)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
-	role, err := Decrypt(ECB, enc)
+	role, err := pals.Decrypt(pals.ECB, enc)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 	}
-	cookie := ParseCookie(string(role.plaintext))
+	cookie := pals.ParseCookie(string(role.Plaintext))
 	if cookie["role"] != "user" || cookie["email"] != string(email) || cookie["uid"] != "10" {
-		t.Errorf("ParseCookie for %s returned: %s", email, role.plaintext)
+		t.Errorf("ParseCookie for %s returned: %s", email, role.Plaintext)
 	}
 }
 
 func TestCreateAdminProfile(t *testing.T) {
 	email := "foo@bar.com"
-	enc, err := BuildAdminProfile(email)
+	enc, err := pals.BuildAdminProfile(email)
 
 	if err != nil {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
 		return
 	}
-	role, err := Decrypt(ECB, enc)
+	role, err := pals.Decrypt(pals.ECB, enc)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
-	cookie := ParseCookie(string(role.plaintext))
+	cookie := pals.ParseCookie(string(role.Plaintext))
 
 	if cookie["role"] != "admin" {
-		t.Errorf(string(role.plaintext))
+		t.Errorf(string(role.Plaintext))
 		t.Errorf("BuildAdminProfile did not return an admin profile, got %s ", cookie["role"])
 	}
 }
 
 func TestDecryptOracleHarder(t *testing.T) {
-	parsed, err := ParseBase64(Base64EncodedString)
+	parsed, err := pals.ParseBase64(Base64EncodedString)
 	if err != nil {
 		t.Errorf("ParseBase64(%q) threw an error: %s", Base64EncodedString, err)
 		return
 	}
-	oracle := EncryptionOracle{encrypt: prependAndAppendAndEncrypt(parsed), mode: ECBAppend}
-	plaintext, err := oracle.Decrypt()
+	oracle := pals.EncryptionOracle{Encrypt: prependAndAppendAndEncrypt(parsed), Mode: pals.ECBAppend}
+	Plaintext, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptOracleHarder(f) threw an error: %s", err)
 		return
 	}
 	want := "Rollin' in my 5.0\nWith my rag-top down so my hair can blow\nThe girlies on standby waving just to say hi\nDid you stop? No, I just drove by\n"
-	if string(plaintext) != want {
-		t.Errorf("DecryptOracleHarder(f) returned incorrect plaintext: got:\n %q \n want \n %q", plaintext, want)
+	if string(Plaintext) != want {
+		t.Errorf("DecryptOracleHarder(f) returned incorrect Plaintext: got:\n %q \n want \n %q", Plaintext, want)
 	}
 }
 
 func TestPaddingValidation(t *testing.T) {
 	valid := []byte("ICE ICE BABY\x04\x04\x04\x04")
-	if !ValidatePKCS(valid) {
+	if !pals.ValidatePKCS(valid) {
 		t.Errorf("ValidatePKCS incorrectly invalidated first string: %s", valid)
 	}
 	invalid1 := []byte("ICE ICE BABY\x05\x05\x05\x05")
-	if ValidatePKCS(invalid1) {
+	if pals.ValidatePKCS(invalid1) {
 		t.Errorf("ValidatePKCS incorrectly validated second string: %s", invalid1)
 	}
 	invalid2 := []byte("ICE ICE BABY\x01\x02\x03\x04")
-	if ValidatePKCS(invalid2) {
+	if pals.ValidatePKCS(invalid2) {
 		t.Errorf("ValidatePKCS incorrectly validated third string: %s", invalid2)
 	}
 }
 
 func TestAdminEscape(t *testing.T) {
 	in := []byte(";admin=true;asdf=asdf")
-	userData, err := EncryptUserData(in)
+	userData, err := pals.EncryptUserData(in)
 	if err != nil {
 		t.Errorf("EncryptUserData(f) threw an error: %s", err)
 		return
 	}
-	admin, err := DetectAdminString(userData)
+	admin, err := pals.DetectAdminString(userData)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return
@@ -223,29 +210,29 @@ func TestAdminEscape(t *testing.T) {
 	}
 }
 func TestFlipBitForAdmin(t *testing.T) {
-	in := AByteBlock()
-	flipped := FlipBitsToHide(FlipBitsToHide(in))
-	if !TestEq(flipped, in) {
+	in := pals.AByteBlock()
+	flipped := pals.FlipBitsToHide(pals.FlipBitsToHide(in))
+	if !pals.TestEq(flipped, in) {
 		t.Errorf("FlipBitForAdmin didn't undo itself: got %s, want %s", flipped, in)
 	}
 }
 
 func TestCBCBitflipping(t *testing.T) {
 	in := []byte(";admin=true")
-	flipped := FlipBitsToHide(in)
-	userData, err := EncryptUserData(append(flipped, flipped...))
+	flipped := pals.FlipBitsToHide(in)
+	userData, err := pals.EncryptUserData(append(flipped, flipped...))
 	if err != nil {
 		t.Errorf("EncryptUserData threw an error: %s", err)
 		return
 	}
-	b, err := ModifyCiphertextForAdmin(userData.ciphertext)
+	b, err := pals.ModifyCiphertextForAdmin(userData.Ciphertext)
 	if err != nil {
 		t.Errorf("ModifyCiphertextForAdmin threw an error: %s", err)
 		return
 	}
 	c := userData
-	c.ciphertext = b
-	admin, err := DetectAdminString(c)
+	c.Ciphertext = b
+	admin, err := pals.DetectAdminString(c)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return

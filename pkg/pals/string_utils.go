@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"bufio"
@@ -12,11 +12,11 @@ import (
 )
 
 type HexEncoded struct {
-	hexString string
+	HexString string
 }
 
-func (h HexEncoded) getBytes() []byte {
-	src := []byte(h.hexString)
+func (h HexEncoded) GetBytes() []byte {
+	src := []byte(h.HexString)
 	dst := make([]byte, hex.DecodedLen(len(src)))
 	_, err := hex.Decode(dst, src)
 	if err != nil {
@@ -27,12 +27,12 @@ func (h HexEncoded) getBytes() []byte {
 
 // HexToBase64 converts a hex string to a base64 string
 func HexToBase64(h HexEncoded) string {
-	return base64.StdEncoding.EncodeToString(h.getBytes())
+	return base64.StdEncoding.EncodeToString(h.GetBytes())
 }
 
 // HexFixedXor takes two equal-length hex strings and produces their XOR combination.
-func HexFixedXor(hexString1, hexString2 HexEncoded) (string, error) {
-	b, err := FixedXor(hexString1.getBytes(), hexString2.getBytes())
+func HexFixedXor(HexString1, HexString2 HexEncoded) (string, error) {
+	b, err := FixedXor(HexString1.GetBytes(), HexString2.GetBytes())
 	return fmt.Sprintf("%x", b), err
 }
 

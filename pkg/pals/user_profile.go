@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"bytes"
@@ -27,12 +27,12 @@ func (p Profile) Encode() string {
 }
 
 func sortStringMap(m map[string]string) []string {
-	var keys []string
+	var Keys []string
 	for k := range m {
-		keys = append(keys, k)
+		Keys = append(Keys, k)
 	}
-	sort.Strings(keys)
-	return keys
+	sort.Strings(Keys)
+	return Keys
 }
 
 func DumpCookie(m map[string]string) string {
@@ -56,28 +56,28 @@ func ProfileFor(email []byte) Profile {
 
 func EncryptedProfileFor(email []byte) (EncryptedText, error) {
 	p := ProfileFor(email).Encode()
-	return Encrypt(ECB, PlainText{plaintext: []byte(p), CryptoMaterial: CryptoMaterial{key: FixedKey}})
+	return Encrypt(ECB, PlainText{Plaintext: []byte(p), CryptoMaterial: CryptoMaterial{Key: FixedKey}})
 }
 
-func getBytesOfLen(l int) []byte {
+func GetBytesOfLen(l int) []byte {
 	return bytes.Repeat(ByteA, l)
 }
 
 func BuildAdminProfile(email string) (EncryptedText, error) {
 	// produce email=XXXXXXX block and
 	// produce XXXXXXX&uid=10&role= block
-	t, err := EncryptedProfileFor(getBytesOfLen(2*aes.BlockSize - len("email=&uid=10&role=")))
+	t, err := EncryptedProfileFor(GetBytesOfLen(2*aes.BlockSize - len("email=&uid=10&role=")))
 	if err != nil {
 		return EncryptedText{}, err
 	}
-	emailUIDBlock := t.ciphertext[0 : 2*aes.BlockSize]
+	emailUIDBlock := t.Ciphertext[0 : 2*aes.BlockSize]
 	// produce adminPPPPPP block
 	a := PKCSPadding([]byte("admin"), aes.BlockSize)
-	emailStub := append(getBytesOfLen(aes.BlockSize-len("email=")), a...)
+	emailStub := append(GetBytesOfLen(aes.BlockSize-len("email=")), a...)
 	t, err = EncryptedProfileFor(emailStub)
 	if err != nil {
 		return EncryptedText{}, err
 	}
-	adminBlock := t.ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return EncryptedText{ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: CryptoMaterial{key: FixedKey}, padding: PKCS}, err
+	adminBlock := t.Ciphertext[aes.BlockSize : 2*aes.BlockSize]
+	return EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: CryptoMaterial{Key: FixedKey}, padding: PKCS}, err
 }

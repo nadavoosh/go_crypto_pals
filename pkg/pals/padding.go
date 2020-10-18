@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"fmt"

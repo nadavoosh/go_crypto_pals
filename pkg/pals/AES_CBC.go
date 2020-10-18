@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"crypto/aes"
@@ -6,26 +6,26 @@ import (
 )
 
 func encryptCBC(d PlainText) (EncryptedText, error) {
-	e := EncryptedText{CryptoMaterial: CryptoMaterial{key: d.key, iv: d.iv}}
-	padded := PKCSPadding(d.plaintext, aes.BlockSize)
+	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: d.Key, IV: d.IV}}
+	padded := PKCSPadding(d.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
-	cipher := d.iv
-	c, err := aes.NewCipher(d.key)
+	cipher := d.IV
+	c, err := aes.NewCipher(d.Key)
 	if err != nil {
 		return e, err
 	}
 	for _, block := range blocks {
 		cipher = encryptSingleBlock(c, FlexibleXor(block, cipher))
-		e.ciphertext = append(e.ciphertext, cipher...)
+		e.Ciphertext = append(e.Ciphertext, cipher...)
 	}
 	return e, nil
 }
 
-func decryptCBC(e EncryptedText) (PlainText, error) {
-	d := PlainText{CryptoMaterial: CryptoMaterial{key: e.key}}
-	blocks := chunk(e.ciphertext, aes.BlockSize)
-	priorCiphertext := e.iv
-	c, err := aes.NewCipher(e.key)
+func DecryptCBC(e EncryptedText) (PlainText, error) {
+	d := PlainText{CryptoMaterial: CryptoMaterial{Key: e.Key}}
+	blocks := chunk(e.Ciphertext, aes.BlockSize)
+	priorCiphertext := e.IV
+	c, err := aes.NewCipher(e.Key)
 	if err != nil {
 		return d, err
 	}
@@ -37,12 +37,12 @@ func decryptCBC(e EncryptedText) (PlainText, error) {
 		if err != nil {
 			return d, err
 		}
-		d.plaintext = append(d.plaintext, plain...)
+		d.Plaintext = append(d.Plaintext, plain...)
 		priorCiphertext = block
 	}
-	if !ValidatePKCS(d.plaintext) {
+	if !ValidatePKCS(d.Plaintext) {
 		return d, fmt.Errorf("Invalid Padding")
 	}
-	d.plaintext = RemovePKCSPadding(d.plaintext)
+	d.Plaintext = RemovePKCSPadding(d.Plaintext)
 	return d, nil
 }

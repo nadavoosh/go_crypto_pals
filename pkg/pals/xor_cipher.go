@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"bytes"
@@ -8,14 +8,14 @@ import (
 	"strings"
 )
 
-// RepeatingKeyXor sequentially applies each byte of the key to the plaintext and returns the result hex encoded
-func RepeatingKeyXor(plain, key string) (string, error) {
-	res, err := RepeatingKeyXorBytes([]byte(plain), []byte(key))
+// RepeatingKeyXor sequentially applies each byte of the Key to the Plaintext and returns the result hex encoded
+func RepeatingKeyXor(plain, Key string) (string, error) {
+	res, err := RepeatingKeyXorBytes([]byte(plain), []byte(Key))
 	return fmt.Sprintf("%x", res), err
 }
 
-func RepeatingKeyXorBytes(p, key []byte) ([]byte, error) {
-	b, err := FixedXor(p, RepeatBytesToLegnth(key, len(p)))
+func RepeatingKeyXorBytes(p, Key []byte) ([]byte, error) {
+	b, err := FixedXor(p, RepeatBytesToLegnth(Key, len(p)))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -45,14 +45,14 @@ func chunk(b []byte, chunkSize int) [][]byte {
 }
 
 func DecryptRepeatingKeyXor(b []byte) (PlainText, error) {
-	keysizes, err := guessKeysize(b)
+	Keysizes, err := guessKeysize(b)
 	if err != nil {
 		return PlainText{}, err
 	}
-	// fmt.Printf("Best guesses for keysize are %d\n", keysizes)
+	// fmt.Printf("Best guesses for Keysize are %d\n", Keysizes)
 	var res PlainText
-	for i := 0; i < len(keysizes); i++ {
-		r, err := DecryptRepeatingKeyXorWithKeysize(b, keysizes[i])
+	for i := 0; i < len(Keysizes); i++ {
+		r, err := DecryptRepeatingKeyXorWithKeysize(b, Keysizes[i])
 		if err != nil {
 			return PlainText{}, err
 		}
@@ -63,10 +63,10 @@ func DecryptRepeatingKeyXor(b []byte) (PlainText, error) {
 	return res, nil
 }
 
-func transpose(b [][]byte, keysize int) [][]byte {
-	transposed := make([][]byte, keysize)
+func transpose(b [][]byte, Keysize int) [][]byte {
+	transposed := make([][]byte, Keysize)
 	for _, block := range b {
-		for i := 0; i < keysize; i++ {
+		for i := 0; i < Keysize; i++ {
 			if len(block) > i {
 				transposed[i] = append(transposed[i], block[i])
 			}
@@ -76,24 +76,24 @@ func transpose(b [][]byte, keysize int) [][]byte {
 	return transposed
 }
 
-func DecryptRepeatingKeyXorWithKeysize(b []byte, keysize int) (PlainText, error) {
-	blocks := chunk(b, keysize)
-	t := transpose(blocks, keysize)
-	key := make([]string, keysize)
-	for i := 0; i < keysize; i++ {
+func DecryptRepeatingKeyXorWithKeysize(b []byte, Keysize int) (PlainText, error) {
+	blocks := chunk(b, Keysize)
+	t := transpose(blocks, Keysize)
+	Key := make([]string, Keysize)
+	for i := 0; i < Keysize; i++ {
 		s, err := SolveSingleByteXorCipher(t[i])
 		if err != nil {
 			return PlainText{}, err
 		}
-		key[i] = string(s.key)
+		Key[i] = string(s.Key)
 	}
-	decryptionKey := []byte(strings.Join(key, ""))
+	decryptionKey := []byte(strings.Join(Key, ""))
 	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)
 	if err != nil {
 		return PlainText{}, err
 	}
-	// fmt.Printf("Best guess for key of length %d is %s\n", keysize, key)
-	return PlainText{CryptoMaterial: CryptoMaterial{key: decryptionKey}, plaintext: hplain}, nil
+	// fmt.Printf("Best guess for Key of length %d is %s\n", Keysize, Key)
+	return PlainText{CryptoMaterial: CryptoMaterial{Key: decryptionKey}, Plaintext: hplain}, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {
@@ -101,72 +101,72 @@ func guessKeysize(b []byte) ([]int, error) {
 }
 
 func guessKeysizeBasic(b []byte) (int, error) {
-	var keyGuess int
+	var KeyGuess int
 	minScore := float64(1000000)
-	for keysize := 2; keysize < 40; keysize++ {
-		newScore, err := hemmingDistanceBytes(b[:keysize], b[keysize:keysize*2])
+	for Keysize := 2; Keysize < 40; Keysize++ {
+		newScore, err := hemmingDistanceBytes(b[:Keysize], b[Keysize:Keysize*2])
 		if err != nil {
 			log.Fatal(err)
-			return keyGuess, err
+			return KeyGuess, err
 		}
-		normalized := float64(newScore) / float64(keysize)
-		// fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
+		normalized := float64(newScore) / float64(Keysize)
+		// fmt.Printf("Keysize of %d has score of %f\n", Keysize, normalized)
 		if normalized < minScore {
 			minScore = normalized
-			keyGuess = keysize
+			KeyGuess = Keysize
 		}
 	}
-	return keyGuess, nil
+	return KeyGuess, nil
 }
 
 func getKeysFromMap(m map[int]float64) []int {
-	keys := make([]int, 0, len(m))
+	Keys := make([]int, 0, len(m))
 	for k := range m {
-		keys = append(keys, k)
+		Keys = append(Keys, k)
 	}
-	return keys
+	return Keys
 }
 
 func guessKeysizeAveraged(b []byte, numBlocks int) ([]int, error) {
-	keyGuessesMap := make(map[int]float64)
+	KeyGuessesMap := make(map[int]float64)
 	var highestScoringKeysizeInMap int
 	if numBlocks < 2 {
 		return nil, errors.New("Need at least 2 blocks to compare")
 	}
-	for keysize := 1; keysize < 40; keysize++ {
+	for Keysize := 1; Keysize < 40; Keysize++ {
 		var newScore int
 		for i := 0; i < (numBlocks - 1); i++ {
-			s, err := hemmingDistanceBytes(b[keysize*i:keysize*(i+1)], b[keysize*(i+1):keysize*(i+2)])
+			s, err := hemmingDistanceBytes(b[Keysize*i:Keysize*(i+1)], b[Keysize*(i+1):Keysize*(i+2)])
 			if err != nil {
 				log.Fatal(err)
 				return nil, err
 			}
 			newScore += s
 		}
-		normalized := float64(newScore) / float64(keysize) / float64(numBlocks-1)
-		// fmt.Printf("keysize of %d has score of %f\n", keysize, normalized)
+		normalized := float64(newScore) / float64(Keysize) / float64(numBlocks-1)
+		// fmt.Printf("Keysize of %d has score of %f\n", Keysize, normalized)
 		NumberOfKeyGuessesToReturn := 3
-		if len(keyGuessesMap) < NumberOfKeyGuessesToReturn {
-			// fmt.Printf("Initializing by adding key %b with score %g\n", keysize, normalized)
-			keyGuessesMap[keysize] = normalized
+		if len(KeyGuessesMap) < NumberOfKeyGuessesToReturn {
+			// fmt.Printf("Initializing by adding Key %b with score %g\n", Keysize, normalized)
+			KeyGuessesMap[Keysize] = normalized
 		} else {
-			if normalized < keyGuessesMap[highestScoringKeysizeInMap] {
-				// fmt.Printf("%g is lower than %g so adding %b and removing %b\n", normalized, keyGuessesMap[highestScoringKeysizeInMap], keysize, highestScoringKeysizeInMap)
-				delete(keyGuessesMap, highestScoringKeysizeInMap)
-				keyGuessesMap[keysize] = normalized
+			if normalized < KeyGuessesMap[highestScoringKeysizeInMap] {
+				// fmt.Printf("%g is lower than %g so adding %b and removing %b\n", normalized, KeyGuessesMap[highestScoringKeysizeInMap], Keysize, highestScoringKeysizeInMap)
+				delete(KeyGuessesMap, highestScoringKeysizeInMap)
+				KeyGuessesMap[Keysize] = normalized
 			}
 		}
 		var newhighestScoringKeysizeInMap float64
-		for k, v := range keyGuessesMap {
+		for k, v := range KeyGuessesMap {
 			if v > newhighestScoringKeysizeInMap {
-				// fmt.Printf("%g is higher than %g so setting %b to highest key in map\n", v, newhighestScoringKeysizeInMap, k)
+				// fmt.Printf("%g is higher than %g so setting %b to highest Key in map\n", v, newhighestScoringKeysizeInMap, k)
 				newhighestScoringKeysizeInMap = v
 				highestScoringKeysizeInMap = k
 			}
 		}
-		// fmt.Printf("highestScoringKeysizeInMap is %b at %g\n", highestScoringKeysizeInMap, keyGuessesMap[highestScoringKeysizeInMap])
+		// fmt.Printf("highestScoringKeysizeInMap is %b at %g\n", highestScoringKeysizeInMap, KeyGuessesMap[highestScoringKeysizeInMap])
 	}
-	return getKeysFromMap(keyGuessesMap), nil
+	return getKeysFromMap(KeyGuessesMap), nil
 }
 
 // HemmingDistance returns the number of differing bits in two equal length strings

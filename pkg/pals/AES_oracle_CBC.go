@@ -1,4 +1,4 @@
-package cryptopals
+package pals
 
 import (
 	"bytes"
@@ -6,9 +6,9 @@ import (
 	"fmt"
 )
 
-func getValidationFnForOracle(key []byte) ValidationFn {
-	return func(ciphertext, iv []byte) (bool, error) {
-		e := EncryptedText{ciphertext: ciphertext, CryptoMaterial: CryptoMaterial{key: key, iv: iv}}
+func GetValidationFnForOracle(Key []byte) ValidationFn {
+	return func(Ciphertext, IV []byte) (bool, error) {
+		e := EncryptedText{Ciphertext: Ciphertext, CryptoMaterial: CryptoMaterial{Key: Key, IV: IV}}
 		_, err := Decrypt(CBC, e)
 		if err != nil {
 			if err.Error() == "Invalid Padding" {
@@ -20,20 +20,20 @@ func getValidationFnForOracle(key []byte) ValidationFn {
 	}
 }
 
-func (c CBCPaddingOracle) decryptCBCPadding() ([]byte, error) {
-	prevCipher := c.iv
-	chunks := ChunkForAES(c.ciphertext)
+func (c CBCPaddingOracle) DecryptCBCPadding() ([]byte, error) {
+	prevCipher := c.IV
+	chunks := ChunkForAES(c.Ciphertext)
 	var finalPlaintext []byte
 	for k := range chunks {
-		var plaintext []byte
+		var Plaintext []byte
 		for j := 1; j <= aes.BlockSize; j++ {
-			b, err := c.calculateNextByte(chunks[k], plaintext, j)
+			b, err := c.calculateNextByte(chunks[k], Plaintext, j)
 			if err != nil {
 				return nil, err
 			}
-			plaintext = append([]byte{b}, plaintext...)
+			Plaintext = append([]byte{b}, Plaintext...)
 		}
-		next, err := FixedXor(prevCipher, plaintext)
+		next, err := FixedXor(prevCipher, Plaintext)
 		if err != nil {
 			return nil, err
 		}
@@ -42,12 +42,12 @@ func (c CBCPaddingOracle) decryptCBCPadding() ([]byte, error) {
 	}
 	return RemovePKCSPadding(finalPlaintext), nil
 }
-func (c CBCPaddingOracle) calculateNextByte(block, plaintext []byte, j int) (byte, error) {
+func (c CBCPaddingOracle) calculateNextByte(block, Plaintext []byte, j int) (byte, error) {
 	base := bytes.Repeat([]byte{0}, aes.BlockSize-j)
-	soFar := FlexibleXor(plaintext, bytes.Repeat([]byte{byte(j)}, len(plaintext)))
+	soFar := FlexibleXor(Plaintext, bytes.Repeat([]byte{byte(j)}, len(Plaintext)))
 	for i := 0; i < 256; i++ {
 		filler := append(append(base, byte(i)), soFar...)
-		paddingCorrect, err := c.validationFn(append(filler, block...), c.iv)
+		paddingCorrect, err := c.ValidationFn(append(filler, block...), c.IV)
 		if err != nil {
 			return byte(0), err
 		}
