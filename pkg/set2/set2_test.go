@@ -73,7 +73,7 @@ func TestEncryptCBC(t *testing.T) {
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
-	if string(got.Plaintext) != string(set1.FunkyMusic) {
+	if !pals.TestEq(got.Plaintext, pals.RemovePKCSPadding([]byte(set1.FunkyMusic))) {
 		t.Errorf("encryptCBC(input) is %v, want %q", string(got.Plaintext), set1.FunkyMusic)
 	}
 }
