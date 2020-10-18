@@ -2,6 +2,8 @@ package pals
 
 import (
 	"fmt"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 type Padding int
@@ -25,7 +27,7 @@ func PKCSPadString(s string, blocksize int) string {
 
 func PKCSPadding(b []byte, blocksize int) []byte {
 	add := blocksize - (len(b) % blocksize)
-	return append(b, FillByteSlice(add, byte(add))...)
+	return append(b, utils.FillByteSlice(add, byte(add))...)
 }
 
 func ValidatePKCS(b []byte) bool {

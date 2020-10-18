@@ -102,3 +102,16 @@ func ReadBase64File(filename string) ([]byte, error) {
 func ParseBase64(l string) ([]byte, error) {
 	return base64.StdEncoding.DecodeString(l)
 }
+
+func FillByteSlice(l int, c byte) []byte {
+	repeated := make([]byte, l)
+	for i := 0; i < l; i++ {
+		repeated[i] = c
+	}
+	return repeated
+}
+
+func SingleByteXor(h []byte, c byte) ([]byte, error) {
+	repeated := FillByteSlice(len(h), c)
+	return FixedXor(h, repeated)
+}

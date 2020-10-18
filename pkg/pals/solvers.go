@@ -52,7 +52,7 @@ func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 	var res PlainText
 	var newScore float64
 	for i := 0; i < 256; i++ {
-		t, err := singleByteXor(hBytes, byte(i))
+		t, err := utils.SingleByteXor(hBytes, byte(i))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -63,19 +63,6 @@ func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 		}
 	}
 	return res, nil
-}
-
-func FillByteSlice(l int, c byte) []byte {
-	repeated := make([]byte, l)
-	for i := 0; i < l; i++ {
-		repeated[i] = c
-	}
-	return repeated
-}
-
-func singleByteXor(h []byte, c byte) ([]byte, error) {
-	repeated := FillByteSlice(len(h), c)
-	return utils.FixedXor(h, repeated)
 }
 
 func getLetterFreqMapForEnglish() map[string]float64 {
