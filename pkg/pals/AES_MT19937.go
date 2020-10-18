@@ -3,18 +3,19 @@ package pals
 import (
 	"encoding/binary"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 const MersenneStreamBlockSize = 8
 
 func seedFromKeyD(d *PlainText) {
-	d.MT = NewMersenneTwister()
+	d.MT = mersenne.New()
 	d.MT.Seed(int(binary.BigEndian.Uint16(d.Key)))
 }
 
 func seedFromKeyE(e *EncryptedText) {
-	e.MT = NewMersenneTwister()
+	e.MT = mersenne.New()
 	e.MT.Seed(int(binary.BigEndian.Uint16(e.Key)))
 }
 
@@ -28,7 +29,7 @@ func decryptMT(e EncryptedText) (PlainText, error) {
 	return PlainText{CryptoMaterial: CryptoMaterial{Key: e.Key}, Plaintext: doMT(e.Ciphertext, e.MT)}, nil
 }
 
-func getMTKeystream(m *MT19937) []byte {
+func getMTKeystream(m *mersenne.MT19937) []byte {
 	Keystream := make([]byte, MersenneStreamBlockSize)
 	mersenneNumberBytes := 4 // each mersenne number is 32 bits long, which is 4 bytes of Keystream
 	for i := 0; i < MersenneStreamBlockSize/mersenneNumberBytes; i++ {
@@ -37,7 +38,7 @@ func getMTKeystream(m *MT19937) []byte {
 	return Keystream
 }
 
-func doMT(orig []byte, m *MT19937) []byte {
+func doMT(orig []byte, m *mersenne.MT19937) []byte {
 	if m == nil {
 		panic("oops")
 	}

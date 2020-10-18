@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
@@ -91,12 +92,12 @@ func buildAdminProfile(email string) (pals.EncryptedText, error) {
 	}
 	emailUIDBlock := t.Ciphertext[0 : 2*aes.BlockSize]
 	// produce adminPPPPPP block
-	a := pals.PKCSPadding([]byte("admin"), aes.BlockSize)
+	a := padding.PKCSPadding([]byte("admin"), aes.BlockSize)
 	emailStub := append(getBytesOfLen(aes.BlockSize-len("email=")), a...)
 	t, err = encryptedProfileFor(emailStub)
 	if err != nil {
 		return pals.EncryptedText{}, err
 	}
 	adminBlock := t.Ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return pals.EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}, Padding: pals.PKCS}, err
+	return pals.EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}, Padding: padding.PKCS}, err
 }

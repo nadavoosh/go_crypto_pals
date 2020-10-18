@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -113,5 +114,5 @@ func (o EncryptionOracle) DecryptECBAppend() ([]byte, error) {
 	if nPlain == nil {
 		return nil, fmt.Errorf("Found zero encrypted string matches, which is wrong")
 	}
-	return RemovePKCSPadding(nPlain), nil
+	return padding.RemovePKCSPadding(nPlain), nil
 }

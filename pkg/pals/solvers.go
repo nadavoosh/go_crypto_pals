@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -12,13 +14,13 @@ type CryptoMaterial struct {
 	Key   []byte
 	IV    []byte
 	Nonce int64
-	MT    *MT19937
+	MT    *mersenne.MT19937
 }
 
 type EncryptedText struct {
 	CryptoMaterial
 	Ciphertext []byte
-	Padding    Padding
+	Padding    padding.Padding
 }
 
 type PlainText struct {
@@ -52,7 +54,7 @@ func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 	var res PlainText
 	var newScore float64
 	for i := 0; i < 256; i++ {
-		t, err := singleByteXor(hBytes, byte(i))
+		t, err := utils.SingleByteXor(hBytes, byte(i))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -63,19 +65,6 @@ func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 		}
 	}
 	return res, nil
-}
-
-func FillByteSlice(l int, c byte) []byte {
-	repeated := make([]byte, l)
-	for i := 0; i < l; i++ {
-		repeated[i] = c
-	}
-	return repeated
-}
-
-func singleByteXor(h []byte, c byte) ([]byte, error) {
-	repeated := FillByteSlice(len(h), c)
-	return utils.FixedXor(h, repeated)
 }
 
 func getLetterFreqMapForEnglish() map[string]float64 {

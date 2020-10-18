@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/set1"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
@@ -14,18 +15,18 @@ import (
 func TestPKCS7Padding(t *testing.T) {
 	in := YELLOWSUBMARINE
 	want := "YELLOW SUBMARINE\x04\x04\x04\x04"
-	got := pals.PKCSPadString(in, 20)
+	got := padding.PKCSPadString(in, 20)
 	if got != want {
-		t.Errorf("PKCSPadding(%q) == %q, want %q", in, got, want)
+		t.Errorf("padding.PKCSPadding(%q) == %q, want %q", in, got, want)
 	}
 }
 
 func TestRemovePKCS7Padding(t *testing.T) {
 	want := YELLOWSUBMARINE
 	in := []byte("YELLOW SUBMARINE\x04\x04\x04\x04")
-	got := pals.RemovePKCSPadding(in)
+	got := padding.RemovePKCSPadding(in)
 	if string(got) != want {
-		t.Errorf("RemovePKCSPadding(%q) == %q, want %q", in, got, want)
+		t.Errorf("padding.RemovePKCSPadding(%q) == %q, want %q", in, got, want)
 	}
 }
 
@@ -74,7 +75,7 @@ func TestEncryptCBC(t *testing.T) {
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
-	if !pals.TestEq(got.Plaintext, pals.RemovePKCSPadding([]byte(set1.FunkyMusicPadded))) {
+	if !pals.TestEq(got.Plaintext, padding.RemovePKCSPadding([]byte(set1.FunkyMusicPadded))) {
 		t.Errorf("encryptCBC(input) is %v, want %q", string(got.Plaintext), set1.FunkyMusicPadded)
 	}
 }
@@ -181,15 +182,15 @@ func TestDecryptOracleHarder(t *testing.T) {
 
 func TestPaddingValidation(t *testing.T) {
 	valid := []byte("ICE ICE BABY\x04\x04\x04\x04")
-	if !pals.ValidatePKCS(valid) {
+	if !padding.ValidatePKCS(valid) {
 		t.Errorf("ValidatePKCS incorrectly invalidated first string: %s", valid)
 	}
 	invalid1 := []byte("ICE ICE BABY\x05\x05\x05\x05")
-	if pals.ValidatePKCS(invalid1) {
+	if padding.ValidatePKCS(invalid1) {
 		t.Errorf("ValidatePKCS incorrectly validated second string: %s", invalid1)
 	}
 	invalid2 := []byte("ICE ICE BABY\x01\x02\x03\x04")
-	if pals.ValidatePKCS(invalid2) {
+	if padding.ValidatePKCS(invalid2) {
 		t.Errorf("ValidatePKCS incorrectly validated third string: %s", invalid2)
 	}
 }
