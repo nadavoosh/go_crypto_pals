@@ -89,7 +89,6 @@ func TestHemmingDistance(t *testing.T) {
 func TestDecryptRepeatingKeyXor(t *testing.T) {
 	filename := "../../challenges/challenge6.txt"
 	wantKey := "Terminator X: Bring the noise"
-	funkyMusicPlain := strings.Replace(FunkyMusic, "\x04", "", -1)
 	lines, err := pals.ReadBase64File(filename)
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
@@ -101,8 +100,8 @@ func TestDecryptRepeatingKeyXor(t *testing.T) {
 	if string(got.Key) != wantKey {
 		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got.Key, wantKey)
 	}
-	if string(got.Plaintext) != funkyMusicPlain {
-		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got.Plaintext, funkyMusicPlain)
+	if string(got.Plaintext) != FunkyMusicUnpadded {
+		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got.Plaintext, FunkyMusicUnpadded)
 	}
 }
 
@@ -118,8 +117,8 @@ func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 	if err != nil {
 		t.Errorf("Decrypt_AES_ECB_b64(input) threw an error: %s", err)
 	}
-	if string(got.Plaintext) != FunkyMusic {
-		t.Errorf("Decrypt_AES_ECB_b64(input) == %q, want %q", got.Plaintext, FunkyMusic)
+	if string(got.Plaintext) != FunkyMusicPadded {
+		t.Errorf("Decrypt_AES_ECB_b64(input) == %q, want %q", got.Plaintext, FunkyMusicPadded)
 	}
 }
 

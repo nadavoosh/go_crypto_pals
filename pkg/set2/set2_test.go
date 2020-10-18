@@ -30,16 +30,16 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.Encrypt(pals.ECB, pals.PlainText{Plaintext: []byte(set1.FunkyMusic), CryptoMaterial: pals.CryptoMaterial{Key: key}})
+	c, err := pals.Encrypt(pals.ECB, pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), CryptoMaterial: pals.CryptoMaterial{Key: key}})
 	if err != nil {
-		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusic, err)
+		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
 	got, err := pals.Decrypt(pals.ECB, c)
 	if err != nil {
-		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusic, err)
+		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
-	if string(got.Plaintext) != set1.FunkyMusic {
-		t.Errorf("DecryptECB(%q) == %q, want %q", set1.FunkyMusic, got.Plaintext, set1.FunkyMusic)
+	if string(got.Plaintext) != set1.FunkyMusicPadded {
+		t.Errorf("DecryptECB(%q) == %q, want %q", set1.FunkyMusicPadded, got.Plaintext, set1.FunkyMusicPadded)
 	}
 }
 
@@ -73,8 +73,8 @@ func TestEncryptCBC(t *testing.T) {
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
-	if !pals.TestEq(got.Plaintext, pals.RemovePKCSPadding([]byte(set1.FunkyMusic))) {
-		t.Errorf("encryptCBC(input) is %v, want %q", string(got.Plaintext), set1.FunkyMusic)
+	if !pals.TestEq(got.Plaintext, pals.RemovePKCSPadding([]byte(set1.FunkyMusicPadded))) {
+		t.Errorf("encryptCBC(input) is %v, want %q", string(got.Plaintext), set1.FunkyMusicPadded)
 	}
 }
 
@@ -84,13 +84,13 @@ func TestNewEncryptor(t *testing.T) {
 	if rand.Float64() < float64(0.5) {
 		mode = pals.CBC
 	}
-	e, err := pals.NewEncryptor([]byte(set1.FunkyMusic), mode)
+	e, err := pals.NewEncryptor([]byte(set1.FunkyMusicPadded), mode)
 	if err != nil {
-		t.Errorf("NewEncryptor(%q) threw an error: %s", set1.FunkyMusic, err)
+		t.Errorf("NewEncryptor(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
 	Plaintext, err := e.Encrypt()
 	if err != nil {
-		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", set1.FunkyMusic, err)
+		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
 	guessed := pals.GuessAESMode(Plaintext)
 	if guessed != mode {
