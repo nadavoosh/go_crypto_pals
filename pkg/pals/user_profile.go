@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 type ProfileRole string
@@ -56,11 +58,11 @@ func ProfileFor(email []byte) Profile {
 
 func EncryptedProfileFor(email []byte) (EncryptedText, error) {
 	p := ProfileFor(email).Encode()
-	return Encrypt(ECB, PlainText{Plaintext: []byte(p), CryptoMaterial: CryptoMaterial{Key: FixedKey}})
+	return Encrypt(ECB, PlainText{Plaintext: []byte(p), CryptoMaterial: CryptoMaterial{Key: utils.FixedKey}})
 }
 
 func GetBytesOfLen(l int) []byte {
-	return bytes.Repeat(ByteA, l)
+	return bytes.Repeat(utils.ByteA, l)
 }
 
 func BuildAdminProfile(email string) (EncryptedText, error) {
@@ -79,5 +81,5 @@ func BuildAdminProfile(email string) (EncryptedText, error) {
 		return EncryptedText{}, err
 	}
 	adminBlock := t.Ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: CryptoMaterial{Key: FixedKey}, padding: PKCS}, err
+	return EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: CryptoMaterial{Key: utils.FixedKey}, padding: PKCS}, err
 }

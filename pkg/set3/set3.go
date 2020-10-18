@@ -27,7 +27,7 @@ func padAndEncryptFromSet() (pals.EncryptedText, error) {
 	if err != nil {
 		return pals.EncryptedText{}, err
 	}
-	d := pals.PlainText{Plaintext: []byte(Plaintext), CryptoMaterial: pals.CryptoMaterial{Key: pals.FixedKey, IV: pals.GenerateKey()}}
+	d := pals.PlainText{Plaintext: []byte(Plaintext), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey, IV: utils.GenerateKey()}}
 	return pals.Encrypt(pals.CBC, d)
 }
 

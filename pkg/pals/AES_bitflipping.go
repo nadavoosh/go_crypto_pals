@@ -24,7 +24,7 @@ func EncryptUserData(input []byte) (EncryptedText, error) {
 	Plaintext := append(prepend, append(escape(string(input)), after...)...)
 	return Encrypt(CBC, PlainText{
 		Plaintext:      Plaintext,
-		CryptoMaterial: CryptoMaterial{Key: FixedKey},
+		CryptoMaterial: CryptoMaterial{Key: utils.FixedKey},
 	})
 }
 

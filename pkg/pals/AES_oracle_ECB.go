@@ -3,6 +3,8 @@ package pals
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map[string]byte, error) {
@@ -21,7 +23,7 @@ func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map
 
 func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	// Encrypt 3 * blocksize bytes and find the (first) Ciphertext block that is repeated. This is likely our block, encrypted.
-	c, err := f(bytes.Repeat(ByteA, 3*blocksize))
+	c, err := f(bytes.Repeat(utils.ByteA, 3*blocksize))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -45,7 +47,7 @@ func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	// now add blocksize + n more bytes, increasing n 1 at a time until the encrypted block we found earlier appears in the Ciphertext again.
 	// n bytes of padding will bring the prepended text to a full block, and we can trim it off the Ciphertext.
 	for n := 0; n < blocksize; n++ {
-		c, err := f(bytes.Repeat(ByteA, blocksize+n))
+		c, err := f(bytes.Repeat(utils.ByteA, blocksize+n))
 		if err != nil {
 			return 0, 0, err
 		}
@@ -65,7 +67,7 @@ func (o EncryptionOracle) DecryptECBAppend() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	sampleCiphertext, err := f(bytes.Repeat(ByteA, 3*blocksize))
+	sampleCiphertext, err := f(bytes.Repeat(utils.ByteA, 3*blocksize))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +86,7 @@ func (o EncryptionOracle) DecryptECBAppend() ([]byte, error) {
 	}
 	for n := blocksToSkip; n < len(baseCiphertext.Ciphertext)/blocksize+1; n++ {
 		for j := 0; j < blocksize; j++ {
-			baseInput := bytes.Repeat(ByteA, paddingLen+blocksize-(j+1))
+			baseInput := bytes.Repeat(utils.ByteA, paddingLen+blocksize-(j+1))
 			testInput := append(baseInput, nPlain...)
 			m, err := buildMap(f, testInput, blocksize, n)
 			if err != nil {

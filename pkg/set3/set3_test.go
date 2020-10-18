@@ -139,7 +139,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 	}
 	actual := []byte{}
 	nonce := int64(0)
-	Key := pals.GenerateKey()
+	Key := utils.GenerateKey()
 	rawCiphertexts := [][]byte{}
 	minLen := 100000
 	for _, PlaintextLine := range lines {
@@ -268,7 +268,7 @@ func TestCloneMT19937(t *testing.T) {
 	}
 }
 func TestMT19937Encryption(t *testing.T) {
-	Key := pals.GenerateKey()
+	Key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
 	d := pals.PlainText{
 		Plaintext:      original,
@@ -294,7 +294,7 @@ func TestMT19937Encryption(t *testing.T) {
 
 func TestBreakMT19937Encryption(t *testing.T) {
 	const MersenneSeedSpace = 65536
-	base := bytes.Repeat(pals.ByteA, 14)
+	base := bytes.Repeat(utils.ByteA, 14)
 	randomBytes := make([]byte, mathRand.Intn(5)+5)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
@@ -339,14 +339,14 @@ func TestBreakMT19937Encryption(t *testing.T) {
 }
 
 func tokenOracle() (pals.EncryptedText, error) {
-	Plaintext := bytes.Repeat(pals.ByteA, mathRand.Intn(20)+4)
+	Plaintext := bytes.Repeat(utils.ByteA, mathRand.Intn(20)+4)
 	return mersenneEncrypt(Plaintext, uint16(time.Now().Unix()))
 }
 
 func isTokenForRecentTime(token string) (bool, error) {
 	now := int(time.Now().Unix())
-	sampleText := bytes.Repeat(pals.ByteA, len(token)) // we know the oracle is just encrypting byteA repeated
-	window := 10 * 60                                  // check the last 10 minutes
+	sampleText := bytes.Repeat(utils.ByteA, len(token)) // we know the oracle is just encrypting byteA repeated
+	window := 10 * 60                                   // check the last 10 minutes
 	for i := now; i > now-window; i-- {
 		c, err := mersenneEncrypt(sampleText, uint16(i))
 		if err != nil {
