@@ -46,23 +46,25 @@ func chunk(b []byte, chunkSize int) [][]byte {
 	return chunks
 }
 
-func DecryptRepeatingKeyXor(b []byte) (PlainText, error) {
+func DecryptRepeatingKeyXor(b []byte) (PlainText, Key, error) {
 	Keysizes, err := guessKeysize(b)
 	if err != nil {
-		return PlainText{}, err
+		return PlainText{}, nil, err
 	}
 	// fmt.Printf("Best guesses for Keysize are %d\n", Keysizes)
 	var res PlainText
+	var resKey Key
 	for i := 0; i < len(Keysizes); i++ {
-		r, err := DecryptRepeatingKeyXorWithKeysize(b, Keysizes[i])
+		r, k, err := DecryptRepeatingKeyXorWithKeysize(b, Keysizes[i])
 		if err != nil {
-			return PlainText{}, err
+			return PlainText{}, nil, err
 		}
 		if r.score() < res.score() {
 			res = r
+			resKey = k
 		}
 	}
-	return res, nil
+	return res, resKey, nil
 }
 
 func transpose(b [][]byte, Keysize int) [][]byte {
@@ -78,24 +80,24 @@ func transpose(b [][]byte, Keysize int) [][]byte {
 	return transposed
 }
 
-func DecryptRepeatingKeyXorWithKeysize(b []byte, Keysize int) (PlainText, error) {
+func DecryptRepeatingKeyXorWithKeysize(b []byte, Keysize int) (PlainText, Key, error) {
 	blocks := chunk(b, Keysize)
 	t := transpose(blocks, Keysize)
 	Key := make([]string, Keysize)
 	for i := 0; i < Keysize; i++ {
-		s, err := SolveSingleByteXorCipher(t[i])
+		_, k, err := SolveSingleByteXorCipher(t[i])
 		if err != nil {
-			return PlainText{}, err
+			return PlainText{}, nil, err
 		}
-		Key[i] = string(s.Key)
+		Key[i] = string(k)
 	}
 	decryptionKey := []byte(strings.Join(Key, ""))
 	hplain, err := RepeatingKeyXorBytes(b, decryptionKey)
 	if err != nil {
-		return PlainText{}, err
+		return PlainText{}, nil, err
 	}
 	// fmt.Printf("Best guess for Key of length %d is %s\n", Keysize, Key)
-	return PlainText{Key: decryptionKey, Plaintext: hplain}, nil
+	return PlainText{Plaintext: hplain}, decryptionKey, nil
 }
 
 func guessKeysize(b []byte) ([]int, error) {

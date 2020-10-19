@@ -22,7 +22,7 @@ func TestCBCPaddingValidation(t *testing.T) {
 		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
 		return
 	}
-	decryptAndValidatePadding := pals.GetValidationFnForOracle(d.Key)
+	decryptAndValidatePadding := pals.GetValidationFnForOracle(utils.FixedKey)
 	valid, err := decryptAndValidatePadding(d.Ciphertext, d.IV)
 	if err != nil {
 		t.Errorf("decryptAndValidatePadding threw an error: %s", err)
@@ -39,7 +39,7 @@ func TestCBCPaddingOracle(t *testing.T) {
 		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
 		return
 	}
-	oracle := pals.CBCPaddingOracle{IV: encrypt.IV, Ciphertext: encrypt.Ciphertext, ValidationFn: pals.GetValidationFnForOracle(encrypt.Key)}
+	oracle := pals.CBCPaddingOracle{IV: encrypt.IV, Ciphertext: encrypt.Ciphertext, ValidationFn: pals.GetValidationFnForOracle(utils.FixedKey)}
 	res, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("oracle.Decrypt(f) threw an error: %s", err)
@@ -57,13 +57,12 @@ func TestCTRCipher(t *testing.T) {
 		t.Errorf("ParseBase64 threw an error: %s", err)
 		return
 	}
-	Key := []byte("YELLOW SUBMARINE")
+	key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
 	e := pals.CTR{EncryptedText: pals.EncryptedText{
 		Ciphertext: cipherterxt,
-		Key:        Key,
 	}, Nonce: nonce}
-	p, err := e.Decrypt()
+	p, err := e.Decrypt(key)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
@@ -75,9 +74,8 @@ func TestCTRCipher(t *testing.T) {
 	}
 	d := pals.CTR{PlainText: pals.PlainText{
 		Plaintext: []byte(want),
-		Key:       Key,
 	}, Nonce: nonce}
-	c, err := d.Encrypt()
+	c, err := d.Encrypt(key)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
@@ -105,7 +103,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 	}
 	nonce := int64(0)
 	// randomly generated:
-	Key := []byte{18, 39, 184, 124, 192, 76, 210, 222, 7, 118, 111, 129, 173, 147, 95, 187}
+	key := []byte{18, 39, 184, 124, 192, 76, 210, 222, 7, 118, 111, 129, 173, 147, 95, 187}
 	// guessed iteratIVely by looking at what prints and finding one letter to try next:
 	KeystreamGuess := []byte{61, 119, 199, 221, 251, 12, 179, 47, 28, 48, 171, 47, 152, 235, 153, 236, 113, 47, 144, 28, 151, 200, 54, 228, 104, 190, 165, 111, 120, 237, 239, 125, 179, 228, 122, 201, 172, 60}
 	for _, PlaintextLine := range lines {
@@ -116,9 +114,8 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 		}
 		d := pals.CTR{PlainText: pals.PlainText{
 			Plaintext: decoded,
-			Key:       Key,
 		}, Nonce: nonce}
-		c, err := d.Encrypt()
+		c, err := d.Encrypt(key)
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
@@ -140,7 +137,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 	}
 	actual := []byte{}
 	nonce := int64(0)
-	Key := utils.GenerateKey()
+	key := utils.GenerateKey()
 	rawCiphertexts := [][]byte{}
 	minLen := 100000
 	for _, PlaintextLine := range lines {
@@ -152,9 +149,8 @@ func TestBreakCTRStatistically(t *testing.T) {
 		actual = append(actual, decoded...)
 		d := pals.CTR{PlainText: pals.PlainText{
 			Plaintext: decoded,
-			Key:       Key,
 		}, Nonce: nonce}
-		c, err := d.Encrypt()
+		c, err := d.Encrypt(key)
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
@@ -168,7 +164,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 	for _, Ciphertext := range rawCiphertexts {
 		Ciphertexts = append(Ciphertexts, Ciphertext[:minLen]...)
 	}
-	got, err := pals.DecryptRepeatingKeyXorWithKeysize(Ciphertexts, minLen)
+	got, _, err := pals.DecryptRepeatingKeyXorWithKeysize(Ciphertexts, minLen)
 	if err != nil {
 		t.Errorf("DecryptRepeatingKeyXorWithKeysize threw an error: %s", err)
 		return
@@ -273,14 +269,13 @@ func TestMT19937Encryption(t *testing.T) {
 	original := []byte("YELLOWSUBMARINE")
 	d := pals.AES_MT{PlainText: pals.PlainText{
 		Plaintext: original,
-		Key:       key,
 	}}
-	c, err := d.Encrypt()
+	c, err := d.Encrypt(key)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-	p, err := pals.AES_MT{EncryptedText: c}.Decrypt()
+	p, err := pals.AES_MT{EncryptedText: c}.Decrypt(key)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
@@ -334,7 +329,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		}
 	}
 	if !success {
-		t.Errorf("Key not found. Should have been: %s\n", c.Key)
+		t.Errorf("Key not found!\n")
 	}
 }
 

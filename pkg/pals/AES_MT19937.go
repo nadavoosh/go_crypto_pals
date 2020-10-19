@@ -20,14 +20,14 @@ func (m *AES_MT) seedFromKey(key []byte) {
 	m.MT.Seed(int(binary.BigEndian.Uint16(key)))
 }
 
-func (m *AES_MT) Encrypt() (EncryptedText, error) {
-	m.seedFromKey(m.PlainText.Key)
-	return EncryptedText{Key: m.PlainText.Key, Ciphertext: doMT(m.PlainText.Plaintext, m.MT)}, nil
+func (m *AES_MT) Encrypt(k Key) (EncryptedText, error) {
+	m.seedFromKey(k)
+	return EncryptedText{Ciphertext: doMT(m.PlainText.Plaintext, m.MT)}, nil
 }
 
-func (m AES_MT) Decrypt() (PlainText, error) {
-	m.seedFromKey(m.EncryptedText.Key)
-	return PlainText{Key: m.EncryptedText.Key, Plaintext: doMT(m.EncryptedText.Ciphertext, m.MT)}, nil
+func (m AES_MT) Decrypt(k Key) (PlainText, error) {
+	m.seedFromKey(k)
+	return PlainText{Plaintext: doMT(m.EncryptedText.Ciphertext, m.MT)}, nil
 }
 
 func getMTKeystream(m *mersenne.MT19937) []byte {

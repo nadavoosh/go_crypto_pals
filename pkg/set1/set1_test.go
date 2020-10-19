@@ -34,15 +34,15 @@ func TestSolveSingleByteXorCipherHex(t *testing.T) {
 	in := utils.HexEncoded{HexString: "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"}
 	want := "Cooking MC's like a pound of bacon"
 	alsoWant := "X"
-	got, err := pals.SolveSingleByteXorCipherHex(in)
+	got, gotkey, err := pals.SolveSingleByteXorCipherHex(in)
 	if err != nil {
 		t.Errorf("SolveSingleByteXorCipherHex(%q) threw an error", in)
 	}
 	if string(got.Plaintext) != want {
 		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.Plaintext, want)
 	}
-	if string(got.Key) != alsoWant {
-		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.Key, alsoWant)
+	if string(gotkey) != alsoWant {
+		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, gotkey, alsoWant)
 	}
 }
 
@@ -94,12 +94,12 @@ func TestDecryptRepeatingKeyXor(t *testing.T) {
 	if err != nil {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
-	got, err := pals.DecryptRepeatingKeyXor(lines)
+	got, gotKey, err := pals.DecryptRepeatingKeyXor(lines)
 	if err != nil {
 		t.Errorf("DecryptRepeatingKeyXorFromBase64(%q) threw an error: %s", lines, err)
 	}
-	if string(got.Key) != wantKey {
-		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got.Key, wantKey)
+	if string(gotKey) != wantKey {
+		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", gotKey, wantKey)
 	}
 	if string(got.Plaintext) != FunkyMusicUnpadded {
 		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got.Plaintext, FunkyMusicUnpadded)
@@ -114,7 +114,7 @@ func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 	}
 	key := "YELLOW SUBMARINE"
 	decoded, err := utils.ParseBase64(strings.Join(lines, ""))
-	got, err := pals.AES_ECB{EncryptedText: pals.EncryptedText{Ciphertext: decoded, Key: []byte(key)}}.Decrypt()
+	got, err := pals.AES_ECB{EncryptedText: pals.EncryptedText{Ciphertext: decoded}}.Decrypt([]byte(key))
 	if err != nil {
 		t.Errorf("Decrypt_AES_ECB_b64(input) threw an error: %s", err)
 	}
