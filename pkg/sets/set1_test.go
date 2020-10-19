@@ -1,4 +1,4 @@
-package set1
+package sets
 
 import (
 	"strings"

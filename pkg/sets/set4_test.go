@@ -1,4 +1,4 @@
-package set4
+package sets
 
 import (
 	"testing"
