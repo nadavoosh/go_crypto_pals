@@ -16,7 +16,7 @@ func buildMap(f EncryptionFn, testInput []byte, blocksize, blockNumber int) (map
 		if err != nil {
 			return nil, err
 		}
-		ret := p.Ciphertext[(blockNumber * blocksize) : (blockNumber+1)*blocksize]
+		ret := p[(blockNumber * blocksize) : (blockNumber+1)*blocksize]
 		m[string(ret)] = byte(i)
 	}
 	return m, nil
@@ -28,7 +28,7 @@ func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	blocks := chunk(c.Ciphertext, blocksize)
+	blocks := chunk(c, blocksize)
 	var encryptedABytes []byte
 	m := make(map[string]int64)
 	for _, block := range blocks {
@@ -52,7 +52,7 @@ func getPaddingLength(f EncryptionFn, blocksize int) (int, int, error) {
 		if err != nil {
 			return 0, 0, err
 		}
-		blocks = chunk(c.Ciphertext, blocksize)
+		blocks = chunk(c, blocksize)
 		for i, b := range blocks {
 			if testEq(b, encryptedABytes) {
 				return n, i, nil
@@ -72,7 +72,7 @@ func (o EncryptionOracle) DecryptECBAppend() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !SmellsOfECB(sampleCiphertext.Ciphertext) {
+	if !SmellsOfECB(sampleCiphertext) {
 		return nil, fmt.Errorf("ECB Mode not detected in Ciphertext")
 	}
 	baseCiphertext, err := f(nil)
@@ -85,7 +85,7 @@ func (o EncryptionOracle) DecryptECBAppend() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	for n := blocksToSkip; n < len(baseCiphertext.Ciphertext)/blocksize+1; n++ {
+	for n := blocksToSkip; n < len(baseCiphertext)/blocksize+1; n++ {
 		for j := 0; j < blocksize; j++ {
 			baseInput := bytes.Repeat(utils.ByteA, paddingLen+blocksize-(j+1))
 			testInput := append(baseInput, nPlain...)
@@ -97,11 +97,11 @@ func (o EncryptionOracle) DecryptECBAppend() ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			if len(match.Ciphertext) <= n*blocksize {
+			if len(match) <= n*blocksize {
 				// this happens when j is large enough to cause len(f(baseInput).Ciphertext) to be smaller than the Ciphertexts in the map, since a block-boundary was crossed.
 				continue
 			}
-			actual := match.Ciphertext[(n * blocksize) : (n+1)*blocksize]
+			actual := match[(n * blocksize) : (n+1)*blocksize]
 			if deciphered, ok := m[string(actual)]; ok {
 				nPlain = append(nPlain, deciphered)
 			} else {

@@ -10,9 +10,9 @@ import (
 const MersenneStreamBlockSize = 8
 
 type AES_MT struct {
-	Plain     Plain
-	Encrypted Encrypted
-	MT            *mersenne.MT19937
+	Plaintext
+	Ciphertext
+	MT *mersenne.MT19937
 }
 
 func (m *AES_MT) seedFromKey(key []byte) {
@@ -20,14 +20,14 @@ func (m *AES_MT) seedFromKey(key []byte) {
 	m.MT.Seed(int(binary.BigEndian.Uint16(key)))
 }
 
-func (m *AES_MT) Encrypt(k Key) (Encrypted, error) {
+func (m *AES_MT) Encrypt(k Key) (Ciphertext, error) {
 	m.seedFromKey(k)
-	return Encrypted{Ciphertext: doMT(m.Plain.Plaintext, m.MT)}, nil
+	return doMT(m.Plaintext, m.MT), nil
 }
 
-func (m AES_MT) Decrypt(k Key) (Plain, error) {
+func (m AES_MT) Decrypt(k Key) (Plaintext, error) {
 	m.seedFromKey(k)
-	return Plain{Plaintext: doMT(m.Encrypted.Ciphertext, m.MT)}, nil
+	return doMT(m.Ciphertext, m.MT), nil
 }
 
 func getMTKeystream(m *mersenne.MT19937) []byte {

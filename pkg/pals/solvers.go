@@ -5,55 +5,38 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-type Encrypted struct {
-	Ciphertext []byte
-	Padding    padding.Padding
-	IV         []byte
-}
-
+type Ciphertext []byte
+type Plaintext []byte
+type IV []byte
 type Key []byte
 
-type Plain struct {
-	Plaintext []byte
-	IV        []byte
-}
-
-func (d Plain) score() float64 {
-	if d.Plaintext == nil {
+func (d Plaintext) score() float64 {
+	if d == nil {
 		// return a high score for uninitialized Plain
 		return float64(1e10)
 	}
-	return getScore([]byte(d.Plaintext))
-}
-
-func (d Plain) minimize() float64 {
-	if d.Plaintext == nil {
-		// return a high score for uninitialized Plain
-		return float64(1e10)
-	}
-	return getScore([]byte(d.Plaintext))
+	return getScore([]byte(d))
 }
 
 // SolveSingleByteXorCipherHex examines the input XORed against a single character, and returns the most likely original text and Key, based on english character frequency
-func SolveSingleByteXorCipherHex(h utils.HexEncoded) (Plain, Key, error) {
+func SolveSingleByteXorCipherHex(h utils.HexEncoded) (Plaintext, Key, error) {
 	return SolveSingleByteXorCipher(h.GetBytes())
 }
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and Key, based on english character frequency
-func SolveSingleByteXorCipher(hBytes []byte) (Plain, Key, error) {
-	var res Plain
-	var resultKey []byte
+func SolveSingleByteXorCipher(hBytes []byte) (Plaintext, Key, error) {
+	var res Plaintext
+	var resultKey Key
 	var newScore float64
 	for i := 0; i < 256; i++ {
 		t, err := utils.SingleByteXor(hBytes, byte(i))
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := Plain{Plaintext: t}
+		tprime := Plaintext(t)
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime
@@ -118,8 +101,8 @@ func getScore(text []byte) float64 {
 	return score
 }
 
-func DetectSingleByteXorCipher(lines []string) (Plain, error) {
-	var res Plain
+func DetectSingleByteXorCipher(lines []string) (Plaintext, error) {
+	var res Plaintext
 	for _, h := range lines {
 		s, _, err := SolveSingleByteXorCipherHex(utils.HexEncoded{HexString: h})
 		if err != nil {

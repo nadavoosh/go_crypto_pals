@@ -9,37 +9,38 @@ import (
 )
 
 type AES_CBC struct {
-	Plain     Plain
-	Encrypted Encrypted
+	Plaintext
+	Ciphertext
+	IV IV
 }
 
-func (cbc AES_CBC) Encrypt(k Key) (Encrypted, error) {
-	if cbc.Plain.IV == nil {
-		IV, err := utils.GenerateRandomBlock()
+func (cbc AES_CBC) Encrypt(k Key) (Ciphertext, error) {
+	if cbc.IV == nil {
+		iv, err := utils.GenerateRandomBlock()
 		if err != nil {
-			return Encrypted{}, err
+			return nil, err
 		}
-		cbc.Plain.IV = IV
+		cbc.IV = iv
 	}
-	e := Encrypted{IV: cbc.Plain.IV}
-	padded := padding.PKCSPadding(cbc.Plain.Plaintext, aes.BlockSize)
+	e := Ciphertext{}
+	padded := padding.PKCSPadding(cbc.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
-	cipher := cbc.Plain.IV
+	cipher := cbc.IV
 	c, err := aes.NewCipher(k)
 	if err != nil {
 		return e, err
 	}
 	for _, block := range blocks {
 		cipher = encryptSingleBlock(c, utils.FlexibleXor(block, cipher))
-		e.Ciphertext = append(e.Ciphertext, cipher...)
+		e = append(e, cipher...)
 	}
 	return e, nil
 }
 
-func (cbc AES_CBC) Decrypt(k Key) (Plain, error) {
-	d := Plain{}
-	blocks := chunk(cbc.Encrypted.Ciphertext, aes.BlockSize)
-	priorCiphertext := cbc.Encrypted.IV
+func (cbc AES_CBC) Decrypt(k Key) (Plaintext, error) {
+	d := Plaintext{}
+	blocks := chunk(cbc.Ciphertext, aes.BlockSize)
+	priorCiphertext := cbc.IV
 	c, err := aes.NewCipher(k)
 	if err != nil {
 		return d, err
@@ -52,12 +53,12 @@ func (cbc AES_CBC) Decrypt(k Key) (Plain, error) {
 		if err != nil {
 			return d, err
 		}
-		d.Plaintext = append(d.Plaintext, plain...)
+		d = append(d, plain...)
 		priorCiphertext = block
 	}
-	if !padding.ValidatePKCS(d.Plaintext) {
+	if !padding.ValidatePKCS(d) {
 		return d, fmt.Errorf("Invalid Padding")
 	}
-	d.Plaintext = padding.RemovePKCSPadding(d.Plaintext)
+	d = padding.RemovePKCSPadding(d)
 	return d, nil
 }

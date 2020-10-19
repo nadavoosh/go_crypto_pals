@@ -14,15 +14,15 @@ import (
 )
 
 func appendAndEncrypt(a []byte) pals.EncryptionFn {
-	return func(plain []byte) (pals.Encrypted, error) {
-		d := pals.NewAESECB(pals.Plain{Plaintext: append(plain, a...)})
+	return func(plain []byte) (pals.Ciphertext, error) {
+		d := pals.NewAESECB(pals.Plaintext(append(plain, a...)))
 		return d.Encrypt(utils.FixedKey)
 	}
 }
 
 func prependAndAppendAndEncrypt(a []byte) pals.EncryptionFn {
-	return func(plain []byte) (pals.Encrypted, error) {
-		d := pals.NewAESECB(pals.Plain{Plaintext: append(append(utils.FixedBytes, plain...), a...)})
+	return func(plain []byte) (pals.Ciphertext, error) {
+		d := pals.NewAESECB(pals.Plaintext(append(append(utils.FixedBytes, plain...), a...)))
 		return d.Encrypt(utils.FixedKey)
 	}
 }
@@ -74,30 +74,94 @@ func profileFor(email []byte) profile {
 	return profile{user: fmt.Sprintf(r.Replace(string(email))), uid: 10, role: user}
 }
 
-func encryptedProfileFor(email []byte) (pals.Encrypted, error) {
+func encryptedProfileFor(email []byte) (pals.Ciphertext, error) {
 	p := profileFor(email).encode()
-	return pals.NewAESECB(pals.Plain{Plaintext: []byte(p)}).Encrypt(utils.FixedKey)
+	return pals.NewAESECB(pals.Plaintext(p)).Encrypt(utils.FixedKey)
 }
 
 func getBytesOfLen(l int) []byte {
 	return bytes.Repeat(utils.ByteA, l)
 }
 
-func buildAdminProfile(email string) (pals.Encrypted, error) {
+func buildAdminProfile(email string) (pals.Ciphertext, error) {
 	// produce email=XXXXXXX block and
 	// produce XXXXXXX&uid=10&role= block
 	t, err := encryptedProfileFor(getBytesOfLen(2*aes.BlockSize - len("email=&uid=10&role=")))
 	if err != nil {
-		return pals.Encrypted{}, err
+		return nil, err
 	}
-	emailUIDBlock := t.Ciphertext[0 : 2*aes.BlockSize]
+	emailUIDBlock := t[0 : 2*aes.BlockSize]
 	// produce adminPPPPPP block
 	a := padding.PKCSPadding([]byte("admin"), aes.BlockSize)
 	emailStub := append(getBytesOfLen(aes.BlockSize-len("email=")), a...)
 	t, err = encryptedProfileFor(emailStub)
 	if err != nil {
-		return pals.Encrypted{}, err
+		return nil, err
 	}
-	adminBlock := t.Ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return pals.Encrypted{Ciphertext: append(emailUIDBlock, adminBlock...), Padding: padding.PKCS}, err
+	adminBlock := t[aes.BlockSize : 2*aes.BlockSize]
+	return pals.Ciphertext(append(emailUIDBlock, adminBlock...)), err
+}
+
+func encryptUserData(input []byte) (pals.Ciphertext, error) {
+	prepend := []byte("comment1=cooking%20MCs;userdata=")
+	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
+	p := append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
+	return pals.AES_CBC{Plaintext: p}.Encrypt(utils.FixedKey)
+}
+
+func splitString(s, sep string) []string {
+	var sp []string
+	var prev int
+	for i := 0; i < len(s); i++ {
+		isLast := i == len(s)-1
+		isTerminal := string(s[i]) == sep || isLast
+		isEscaped := i-1 > 0 && string(s[i-1]) == "\\" && !isLast
+		if isTerminal && !isEscaped {
+			var add int
+			if isLast {
+				add = 1
+			}
+			sp = append(sp, s[prev:i+add])
+			prev = i + 1
+		}
+	}
+	return sp
+}
+
+func parseString(s string) map[string]string {
+	m := make(map[string]string)
+	st := splitString(s, ";")
+	for _, pair := range st {
+		p := splitString(pair, "=")
+		if len(p) > 1 {
+			m[utils.Unescape(p[0])] = utils.Unescape(p[1])
+		} else {
+			fmt.Printf("No `=` found in %s\n", pair)
+		}
+	}
+	return m
+}
+
+func detectAdminString(e pals.Ciphertext) (bool, error) {
+	plain, err := pals.AES_CBC{Ciphertext: e}.Decrypt(utils.FixedKey)
+	if err != nil {
+		return false, err
+	}
+	m := parseString(string(plain))
+	if _, ok := m["admin"]; ok {
+		return true, nil
+	}
+	return false, nil
+}
+
+func flipBitsToHide(block []byte) []byte {
+	return utils.FlexibleXor(block, pals.AByteBlock())
+}
+
+func modifyCiphertextForAdmin(Ciphertext []byte) ([]byte, error) {
+	chunks := pals.ChunkForAES(Ciphertext)
+	chunkToFlip := 2 // TODO: calculate this value, by figuring out the length of prepended bytes
+	flippedCiphertext := flipBitsToHide(chunks[chunkToFlip])
+	chunks[chunkToFlip] = flippedCiphertext
+	return bytes.Join(chunks, nil), nil
 }

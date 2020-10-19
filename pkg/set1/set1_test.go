@@ -38,8 +38,8 @@ func TestSolveSingleByteXorCipherHex(t *testing.T) {
 	if err != nil {
 		t.Errorf("SolveSingleByteXorCipherHex(%q) threw an error", in)
 	}
-	if string(got.Plaintext) != want {
-		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got.Plaintext, want)
+	if string(got) != want {
+		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, got, want)
 	}
 	if string(gotkey) != alsoWant {
 		t.Errorf("SolveSingleByteXorCipherHex(%q) == %q, want %q", in, gotkey, alsoWant)
@@ -57,8 +57,8 @@ func TestDetectSingleByteXorCipher(t *testing.T) {
 	if err != nil {
 		t.Errorf("DetectSingleByteXorCipher(%q) threw an error", filename)
 	}
-	if string(got.Plaintext) != want {
-		t.Errorf("DetectSingleByteXorCipher(%q) == %q, want %q", lines, got.Plaintext, want)
+	if string(got) != want {
+		t.Errorf("DetectSingleByteXorCipher(%q) == %q, want %q", lines, got, want)
 	}
 }
 
@@ -101,8 +101,8 @@ func TestDecryptRepeatingKeyXor(t *testing.T) {
 	if string(gotKey) != wantKey {
 		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", gotKey, wantKey)
 	}
-	if string(got.Plaintext) != FunkyMusicUnpadded {
-		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got.Plaintext, FunkyMusicUnpadded)
+	if string(got) != FunkyMusicUnpadded {
+		t.Errorf("DecryptRepeatingKeyXorFromBase64(input) == %q, want %q", got, FunkyMusicUnpadded)
 	}
 }
 
@@ -114,12 +114,12 @@ func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 	}
 	key := "YELLOW SUBMARINE"
 	decoded, err := utils.ParseBase64(strings.Join(lines, ""))
-	got, err := pals.AES_ECB{Encrypted: pals.Encrypted{Ciphertext: decoded}}.Decrypt([]byte(key))
+	got, err := pals.AES_ECB{Ciphertext: decoded}.Decrypt([]byte(key))
 	if err != nil {
 		t.Errorf("Decrypt_AES_ECB_b64(input) threw an error: %s", err)
 	}
-	if string(got.Plaintext) != FunkyMusicPadded {
-		t.Errorf("Decrypt_AES_ECB_b64(input) == %q, want %q", got.Plaintext, FunkyMusicPadded)
+	if string(got) != FunkyMusicPadded {
+		t.Errorf("Decrypt_AES_ECB_b64(input) == %q, want %q", got, FunkyMusicPadded)
 	}
 }
 
