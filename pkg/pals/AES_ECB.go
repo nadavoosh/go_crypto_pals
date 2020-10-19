@@ -13,7 +13,7 @@ type AES_ECB struct {
 }
 
 func NewAESECB(p Plaintext) AES_ECB {
-	return AES_ECB{Plaintext: p}
+	return AES_ECB{Plaintext: p, Padding: padding.PKCS}
 }
 
 func (c AES_ECB) Decrypt(k Key) (Plaintext, error) {

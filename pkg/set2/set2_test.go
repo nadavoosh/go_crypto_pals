@@ -37,7 +37,7 @@ func TestEncryptECB(t *testing.T) {
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
-	cPrime := pals.AES_ECB{Ciphertext: c}
+	cPrime := pals.AES_ECB{Ciphertext: c, Padding: padding.PKCS}
 	got, err := cPrime.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
