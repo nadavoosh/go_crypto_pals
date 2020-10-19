@@ -1,4 +1,4 @@
-package set2
+package sets
 
 import (
 	"crypto/aes"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
-	"github.com/nadavoosh/go_crypto_pals/pkg/set1"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -32,17 +31,17 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.NewAESECB([]byte(set1.FunkyMusicPadded)).Encrypt(key)
+	c, err := pals.NewAESECB([]byte(FunkyMusicPadded)).Encrypt(key)
 	if err != nil {
-		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
+		t.Errorf("EncryptECB(%q) threw an error: %s", FunkyMusicPadded, err)
 	}
 	cPrime := pals.AES_ECB{Ciphertext: c, Padding: padding.PKCS}
 	got, err := cPrime.Decrypt(key)
 	if err != nil {
-		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
+		t.Errorf("DecryptECB(%q) threw an error: %s", FunkyMusicPadded, err)
 	}
-	if string(got) != set1.FunkyMusicPadded {
-		t.Errorf("DecryptECB(%q) == %q, want %q", set1.FunkyMusicPadded, got, set1.FunkyMusicPadded)
+	if string(got) != FunkyMusicPadded {
+		t.Errorf("DecryptECB(%q) == %q, want %q", FunkyMusicPadded, got, FunkyMusicPadded)
 	}
 }
 
@@ -77,8 +76,8 @@ func TestEncryptCBC(t *testing.T) {
 	if err != nil {
 		t.Errorf("DecryptCBC threw an error: %s", err)
 	}
-	if !pals.TestEq(got, padding.RemovePKCSPadding([]byte(set1.FunkyMusicPadded))) {
-		t.Errorf("encryptCBC(input) is %v, want %q", string(got), set1.FunkyMusicPadded)
+	if !pals.TestEq(got, padding.RemovePKCSPadding([]byte(FunkyMusicPadded))) {
+		t.Errorf("encryptCBC(input) is %v, want %q", string(got), FunkyMusicPadded)
 	}
 }
 
@@ -88,13 +87,13 @@ func TestNewEncryptor(t *testing.T) {
 	if rand.Float64() < float64(0.5) {
 		mode = pals.CBC
 	}
-	e, err := pals.NewEncryptor([]byte(set1.FunkyMusicPadded), mode)
+	e, err := pals.NewEncryptor([]byte(FunkyMusicPadded), mode)
 	if err != nil {
-		t.Errorf("NewEncryptor(%q) threw an error: %s", set1.FunkyMusicPadded, err)
+		t.Errorf("NewEncryptor(%q) threw an error: %s", FunkyMusicPadded, err)
 	}
 	Plaintext, err := e.Encrypt()
 	if err != nil {
-		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", set1.FunkyMusicPadded, err)
+		t.Errorf("NewEncryptor.Encrypt(%q) threw an error: %s", FunkyMusicPadded, err)
 	}
 	guessed := pals.GuessAESMode(Plaintext)
 	if guessed != mode {

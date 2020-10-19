@@ -1,4 +1,4 @@
-package set3
+package sets
 
 import (
 	"encoding/binary"
