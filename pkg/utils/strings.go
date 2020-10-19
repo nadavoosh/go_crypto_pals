@@ -115,3 +115,13 @@ func SingleByteXor(h []byte, c byte) ([]byte, error) {
 	repeated := FillByteSlice(len(h), c)
 	return FixedXor(h, repeated)
 }
+
+func Escape(input string) string {
+	r := strings.NewReplacer("=", "\\=", ";", "\\;")
+	return r.Replace(input)
+}
+
+func Unescape(input string) string {
+	r := strings.NewReplacer("\\=", "=", "\\;", ";")
+	return r.Replace(input)
+}

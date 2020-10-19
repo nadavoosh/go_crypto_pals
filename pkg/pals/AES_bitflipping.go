@@ -3,25 +3,14 @@ package pals
 import (
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-func escape(input string) []byte {
-	r := strings.NewReplacer("=", "\\=", ";", "\\;")
-	return []byte(r.Replace(input))
-}
-
-func unescape(input string) string {
-	r := strings.NewReplacer("\\=", "=", "\\;", ";")
-	return r.Replace(input)
-}
-
 func EncryptUserData(input []byte) (EncryptedText, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
-	Plaintext := append(prepend, append(escape(string(input)), after...)...)
+	Plaintext := append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
 	return AES_CBC{PlainText: PlainText{
 		Plaintext:      Plaintext,
 		CryptoMaterial: CryptoMaterial{Key: utils.FixedKey},
@@ -53,11 +42,10 @@ func parseString(s string) map[string]string {
 	for _, pair := range st {
 		p := splitString(pair, "=")
 		if len(p) > 1 {
-			m[unescape(p[0])] = unescape(p[1])
+			m[utils.Unescape(p[0])] = utils.Unescape(p[1])
 		} else {
 			fmt.Printf("No `=` found in %s\n", pair)
 		}
-
 	}
 	return m
 }
