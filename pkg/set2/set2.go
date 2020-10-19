@@ -15,14 +15,14 @@ import (
 
 func appendAndEncrypt(a []byte) pals.EncryptionFn {
 	return func(plain []byte) (pals.EncryptedText, error) {
-		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(plain, a...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}}
+		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(plain, a...), Key: utils.FixedKey}}
 		return d.Encrypt()
 	}
 }
 
 func prependAndAppendAndEncrypt(a []byte) pals.EncryptionFn {
 	return func(plain []byte) (pals.EncryptedText, error) {
-		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(append(utils.FixedBytes, plain...), a...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}}
+		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(append(utils.FixedBytes, plain...), a...), Key: utils.FixedKey}}
 		return d.Encrypt()
 	}
 }
@@ -76,7 +76,7 @@ func profileFor(email []byte) profile {
 
 func encryptedProfileFor(email []byte) (pals.EncryptedText, error) {
 	p := profileFor(email).encode()
-	return pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(p), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}}.Encrypt()
+	return pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(p), Key: utils.FixedKey}}.Encrypt()
 }
 
 func getBytesOfLen(l int) []byte {
@@ -99,5 +99,5 @@ func buildAdminProfile(email string) (pals.EncryptedText, error) {
 		return pals.EncryptedText{}, err
 	}
 	adminBlock := t.Ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return pals.EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}, Padding: padding.PKCS}, err
+	return pals.EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), Key: utils.FixedKey, Padding: padding.PKCS}, err
 }

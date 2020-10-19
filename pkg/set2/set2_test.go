@@ -32,7 +32,7 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), CryptoMaterial: pals.CryptoMaterial{Key: key}}}.Encrypt()
+	c, err := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), Key: key}}.Encrypt()
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
@@ -50,11 +50,11 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := pals.AES_CBC{PlainText: pals.PlainText{Plaintext: []byte(in), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}}.Encrypt()
+	c, err := pals.AES_CBC{PlainText: pals.PlainText{Plaintext: []byte(in), Key: key, IV: IV}}.Encrypt()
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}
+	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), Key: key, IV: IV}
 	got, err := pals.AES_CBC{EncryptedText: in2}.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in2, err)
@@ -71,7 +71,7 @@ func TestEncryptCBC(t *testing.T) {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
 	Key := []byte("YELLOW SUBMARINE")
-	in := pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: Key, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}}
+	in := pals.EncryptedText{Ciphertext: decoded, Key: Key, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
 
 	got, err := pals.AES_CBC{EncryptedText: in}.Decrypt()
 	if err != nil {

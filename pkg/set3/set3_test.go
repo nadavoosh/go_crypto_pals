@@ -59,10 +59,10 @@ func TestCTRCipher(t *testing.T) {
 	}
 	Key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
-	e := pals.CTC{EncryptedText: pals.EncryptedText{
-		Ciphertext:     cipherterxt,
-		CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-	}}
+	e := pals.CTR{EncryptedText: pals.EncryptedText{
+		Ciphertext: cipherterxt,
+		Key:        Key,
+	}, Nonce: nonce}
 	p, err := e.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
@@ -73,10 +73,10 @@ func TestCTRCipher(t *testing.T) {
 		t.Errorf("Decrypt returned: %s, want %s", p.Plaintext, want)
 		return
 	}
-	d := pals.CTC{PlainText: pals.PlainText{
-		Plaintext:      []byte(want),
-		CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-	}}
+	d := pals.CTR{PlainText: pals.PlainText{
+		Plaintext: []byte(want),
+		Key:       Key,
+	}, Nonce: nonce}
 	c, err := d.Encrypt()
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
@@ -114,10 +114,10 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
 		}
-		d := pals.CTC{PlainText: pals.PlainText{
-			Plaintext:      decoded,
-			CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-		}}
+		d := pals.CTR{PlainText: pals.PlainText{
+			Plaintext: decoded,
+			Key:       Key,
+		}, Nonce: nonce}
 		c, err := d.Encrypt()
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
@@ -150,10 +150,10 @@ func TestBreakCTRStatistically(t *testing.T) {
 			return
 		}
 		actual = append(actual, decoded...)
-		d := pals.CTC{PlainText: pals.PlainText{
-			Plaintext:      decoded,
-			CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-		}}
+		d := pals.CTR{PlainText: pals.PlainText{
+			Plaintext: decoded,
+			Key:       Key,
+		}, Nonce: nonce}
 		c, err := d.Encrypt()
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
@@ -269,11 +269,11 @@ func TestCloneMT19937(t *testing.T) {
 	}
 }
 func TestMT19937Encryption(t *testing.T) {
-	Key := utils.GenerateKey()
+	key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
 	d := pals.AES_MT{PlainText: pals.PlainText{
-		Plaintext:      original,
-		CryptoMaterial: pals.CryptoMaterial{Key: Key},
+		Plaintext: original,
+		Key:       key,
 	}}
 	c, err := d.Encrypt()
 	if err != nil {
@@ -334,7 +334,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		}
 	}
 	if !success {
-		t.Errorf("Key not found. Should have been: %s\n", c.CryptoMaterial.Key)
+		t.Errorf("Key not found. Should have been: %s\n", c.Key)
 	}
 }
 

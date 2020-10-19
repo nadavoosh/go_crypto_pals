@@ -5,27 +5,21 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
 	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-type CryptoMaterial struct {
-	Key   []byte
-	IV    []byte
-	Nonce int64
-	MT    *mersenne.MT19937
-}
-
 type EncryptedText struct {
-	CryptoMaterial
+	Key        []byte
 	Ciphertext []byte
 	Padding    padding.Padding
+	IV         []byte
 }
 
 type PlainText struct {
-	CryptoMaterial
+	Key       []byte
 	Plaintext []byte
+	IV        []byte
 }
 
 func (d PlainText) score() float64 {
@@ -58,7 +52,7 @@ func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := PlainText{Plaintext: t, CryptoMaterial: CryptoMaterial{Key: []byte{byte(i)}}}
+		tprime := PlainText{Plaintext: t, Key: []byte{byte(i)}}
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime

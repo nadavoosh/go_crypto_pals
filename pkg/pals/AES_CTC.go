@@ -8,9 +8,10 @@ import (
 	// "fmt"
 )
 
-type CTC struct {
+type CTR struct {
 	PlainText     PlainText
 	EncryptedText EncryptedText
+	Nonce         int64
 }
 
 func int64ToByteArray(i int64) []byte {
@@ -28,11 +29,11 @@ func getKeystream(Key []byte, nonce, count int64) ([]byte, error) {
 	return encryptSingleBlock(c, counter), nil
 }
 
-func (c CTC) Encrypt() (EncryptedText, error) {
-	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: c.PlainText.Key}}
+func (c CTR) Encrypt() (EncryptedText, error) {
+	e := EncryptedText{Key: c.PlainText.Key}
 	blocks := chunk(c.PlainText.Plaintext, aes.BlockSize)
 	for i, block := range blocks {
-		Keystream, err := getKeystream(c.PlainText.Key, c.PlainText.Nonce, int64(i))
+		Keystream, err := getKeystream(c.PlainText.Key, c.Nonce, int64(i))
 		if err != nil {
 			return e, err
 		}
@@ -43,11 +44,11 @@ func (c CTC) Encrypt() (EncryptedText, error) {
 	return e, nil
 }
 
-func (c CTC) Decrypt() (PlainText, error) {
-	d := PlainText{CryptoMaterial: CryptoMaterial{Key: c.EncryptedText.Key}}
+func (c CTR) Decrypt() (PlainText, error) {
+	d := PlainText{Key: c.EncryptedText.Key}
 	blocks := chunk(c.EncryptedText.Ciphertext, aes.BlockSize)
 	for i, block := range blocks {
-		Keystream, err := getKeystream(d.Key, c.EncryptedText.Nonce, int64(i))
+		Keystream, err := getKeystream(d.Key, c.Nonce, int64(i))
 		if err != nil {
 			return d, err
 		}
