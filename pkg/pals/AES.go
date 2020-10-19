@@ -11,15 +11,19 @@ import (
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-type AESMode int
-
 // modes for encryption
 const (
 	ECB AESMode = 0
 	CBC AESMode = 1
-	CTC AESMode = 2
 	MT  AESMode = 3
 )
+
+type AESMode int
+
+type AES interface {
+	Encrypt() (EncryptedText, error)
+	Decrypt() (PlainText, error)
+}
 
 func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 	switch mode {
@@ -34,8 +38,6 @@ func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 			d.IV = IV
 		}
 		return encryptCBC(d)
-	case CTC:
-		return encryptCTC(d)
 	case MT:
 		return encryptMT(d)
 	default:
@@ -56,8 +58,6 @@ func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 			e.IV = IV
 		}
 		return DecryptCBC(e)
-	case CTC:
-		return decryptCTC(e)
 	case MT:
 		return decryptMT(e)
 	default:
