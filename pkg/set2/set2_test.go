@@ -32,11 +32,12 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.Encrypt(pals.ECB, pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), CryptoMaterial: pals.CryptoMaterial{Key: key}})
+	c, err := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), CryptoMaterial: pals.CryptoMaterial{Key: key}}}.Encrypt()
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
-	got, err := pals.Decrypt(pals.ECB, c)
+	cPrime := pals.AES_ECB{EncryptedText: c}
+	got, err := cPrime.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
@@ -49,12 +50,12 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := pals.Encrypt(pals.CBC, pals.PlainText{Plaintext: []byte(in), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}})
+	c, err := pals.AES_CBC{PlainText: pals.PlainText{Plaintext: []byte(in), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}}.Encrypt()
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
 	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}
-	got, err := pals.Decrypt(pals.CBC, in2)
+	got, err := pals.AES_CBC{EncryptedText: in2}.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in2, err)
 	}
@@ -71,7 +72,8 @@ func TestEncryptCBC(t *testing.T) {
 	}
 	Key := []byte("YELLOW SUBMARINE")
 	in := pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: Key, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}}
-	got, err := pals.DecryptCBC(in)
+
+	got, err := pals.AES_CBC{EncryptedText: in}.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
@@ -96,7 +98,7 @@ func TestNewEncryptor(t *testing.T) {
 	}
 	guessed := pals.GuessAESMode(Plaintext)
 	if guessed != mode {
-		t.Errorf("GuessAESMode returned incorrect mode: got %d, want %d", guessed, mode)
+		t.Errorf("GuessAESMode returned incorrect mode: got %v, want %v", guessed, mode)
 	}
 }
 
@@ -131,7 +133,8 @@ func TestEncryptProfile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
-	role, err := pals.Decrypt(pals.ECB, enc)
+	encPrime := pals.AES_ECB{EncryptedText: enc}
+	role, err := encPrime.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 	}
@@ -149,7 +152,8 @@ func TestCreateAdminProfile(t *testing.T) {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
 		return
 	}
-	role, err := pals.Decrypt(pals.ECB, enc)
+	encPrime := pals.AES_ECB{EncryptedText: enc}
+	role, err := encPrime.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return

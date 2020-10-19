@@ -22,10 +22,10 @@ func EncryptUserData(input []byte) (EncryptedText, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
 	Plaintext := append(prepend, append(escape(string(input)), after...)...)
-	return Encrypt(CBC, PlainText{
+	return AES_CBC{PlainText: PlainText{
 		Plaintext:      Plaintext,
 		CryptoMaterial: CryptoMaterial{Key: utils.FixedKey},
-	})
+	}}.Encrypt()
 }
 
 func splitString(s, sep string) []string {
@@ -63,7 +63,7 @@ func parseString(s string) map[string]string {
 }
 
 func DetectAdminString(e EncryptedText) (bool, error) {
-	plain, err := Decrypt(CBC, e)
+	plain, err := AES_CBC{EncryptedText: e}.Decrypt()
 	if err != nil {
 		return false, err
 	}

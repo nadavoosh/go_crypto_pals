@@ -59,11 +59,11 @@ func TestCTRCipher(t *testing.T) {
 	}
 	Key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
-	e := pals.EncryptedText{
+	e := pals.CTC{EncryptedText: pals.EncryptedText{
 		Ciphertext:     cipherterxt,
 		CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-	}
-	p, err := pals.Decrypt(pals.CTC, e)
+	}}
+	p, err := e.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
@@ -73,11 +73,11 @@ func TestCTRCipher(t *testing.T) {
 		t.Errorf("Decrypt returned: %s, want %s", p.Plaintext, want)
 		return
 	}
-	d := pals.PlainText{
+	d := pals.CTC{PlainText: pals.PlainText{
 		Plaintext:      []byte(want),
 		CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-	}
-	c, err := pals.Encrypt(pals.CTC, d)
+	}}
+	c, err := d.Encrypt()
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
@@ -114,11 +114,11 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
 		}
-		d := pals.PlainText{
+		d := pals.CTC{PlainText: pals.PlainText{
 			Plaintext:      decoded,
 			CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-		}
-		c, err := pals.Encrypt(pals.CTC, d)
+		}}
+		c, err := d.Encrypt()
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
@@ -150,11 +150,11 @@ func TestBreakCTRStatistically(t *testing.T) {
 			return
 		}
 		actual = append(actual, decoded...)
-		d := pals.PlainText{
+		d := pals.CTC{PlainText: pals.PlainText{
 			Plaintext:      decoded,
 			CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-		}
-		c, err := pals.Encrypt(pals.CTC, d)
+		}}
+		c, err := d.Encrypt()
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
@@ -271,17 +271,16 @@ func TestCloneMT19937(t *testing.T) {
 func TestMT19937Encryption(t *testing.T) {
 	Key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
-	d := pals.PlainText{
+	d := pals.AES_MT{PlainText: pals.PlainText{
 		Plaintext:      original,
 		CryptoMaterial: pals.CryptoMaterial{Key: Key},
-	}
-	c, err := pals.Encrypt(pals.MT, d)
+	}}
+	c, err := d.Encrypt()
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-
-	p, err := pals.Decrypt(pals.MT, c)
+	p, err := pals.AES_MT{EncryptedText: c}.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
