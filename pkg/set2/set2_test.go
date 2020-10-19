@@ -32,17 +32,17 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.NewAESECB(pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded)}).Encrypt(key)
+	c, err := pals.NewAESECB([]byte(set1.FunkyMusicPadded)).Encrypt(key)
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
-	cPrime := pals.AES_ECB{EncryptedText: c}
+	cPrime := pals.AES_ECB{Ciphertext: c, Padding: padding.PKCS}
 	got, err := cPrime.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
-	if string(got.Plaintext) != set1.FunkyMusicPadded {
-		t.Errorf("DecryptECB(%q) == %q, want %q", set1.FunkyMusicPadded, got.Plaintext, set1.FunkyMusicPadded)
+	if string(got) != set1.FunkyMusicPadded {
+		t.Errorf("DecryptECB(%q) == %q, want %q", set1.FunkyMusicPadded, got, set1.FunkyMusicPadded)
 	}
 }
 
@@ -50,17 +50,18 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := pals.AES_CBC{PlainText: pals.PlainText{Plaintext: []byte(in), IV: IV}}.Encrypt(key)
+	a := pals.AES_CBC{Plaintext: []byte(in), IV: IV}
+	c, err := a.Encrypt(key)
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), IV: IV}
-	got, err := pals.AES_CBC{EncryptedText: in2}.Decrypt(key)
+	b := pals.AES_CBC{Ciphertext: []byte(c), IV: IV}
+	got, err := b.Decrypt(key)
 	if err != nil {
-		t.Errorf("DecryptCBC(%v) threw an error: %s", in2, err)
+		t.Errorf("DecryptCBC threw an error: %s", err)
 	}
-	if string(got.Plaintext) != in {
-		t.Errorf("DecryptCBC(%q) == %q, want %q", in, string(got.Plaintext), in)
+	if string(got) != in {
+		t.Errorf("DecryptCBC(%q) == %q, want %q", in, string(got), in)
 	}
 }
 
@@ -71,14 +72,13 @@ func TestEncryptCBC(t *testing.T) {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
 	key := []byte("YELLOW SUBMARINE")
-	in := pals.EncryptedText{Ciphertext: decoded, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
-
-	got, err := pals.AES_CBC{EncryptedText: in}.Decrypt(key)
+	a := pals.AES_CBC{Ciphertext: decoded, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
+	got, err := a.Decrypt(key)
 	if err != nil {
-		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
+		t.Errorf("DecryptCBC threw an error: %s", err)
 	}
-	if !pals.TestEq(got.Plaintext, padding.RemovePKCSPadding([]byte(set1.FunkyMusicPadded))) {
-		t.Errorf("encryptCBC(input) is %v, want %q", string(got.Plaintext), set1.FunkyMusicPadded)
+	if !pals.TestEq(got, padding.RemovePKCSPadding([]byte(set1.FunkyMusicPadded))) {
+		t.Errorf("encryptCBC(input) is %v, want %q", string(got), set1.FunkyMusicPadded)
 	}
 }
 
@@ -133,14 +133,14 @@ func TestEncryptProfile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
-	encPrime := pals.AES_ECB{EncryptedText: enc}
+	encPrime := pals.AES_ECB{Ciphertext: enc, Padding: padding.PKCS}
 	role, err := encPrime.Decrypt(utils.FixedKey)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 	}
-	cookie := parseCookie(string(role.Plaintext))
+	cookie := parseCookie(string(role))
 	if cookie["role"] != "user" || cookie["email"] != string(email) || cookie["uid"] != "10" {
-		t.Errorf("ParseCookie for %s returned: %s", email, role.Plaintext)
+		t.Errorf("parseCookie for %s returned: %s", email, cookie)
 	}
 }
 
@@ -152,16 +152,15 @@ func TestCreateAdminProfile(t *testing.T) {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
 		return
 	}
-	encPrime := pals.AES_ECB{EncryptedText: enc}
+	encPrime := pals.AES_ECB{Ciphertext: enc, Padding: padding.PKCS}
 	role, err := encPrime.Decrypt(utils.FixedKey)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
-	cookie := parseCookie(string(role.Plaintext))
+	cookie := parseCookie(string(role))
 
 	if cookie["role"] != "admin" {
-		t.Errorf(string(role.Plaintext))
 		t.Errorf("BuildAdminProfile did not return an admin profile, got %s ", cookie["role"])
 	}
 }
@@ -201,12 +200,12 @@ func TestPaddingValidation(t *testing.T) {
 
 func TestAdminEscape(t *testing.T) {
 	in := []byte(";admin=true;asdf=asdf")
-	userData, err := pals.EncryptUserData(in)
+	userData, iv, err := encryptUserData(in)
 	if err != nil {
 		t.Errorf("EncryptUserData(f) threw an error: %s", err)
 		return
 	}
-	admin, err := pals.DetectAdminString(userData)
+	admin, err := detectAdminString(userData, iv)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return
@@ -217,7 +216,7 @@ func TestAdminEscape(t *testing.T) {
 }
 func TestFlipBitForAdmin(t *testing.T) {
 	in := pals.AByteBlock()
-	flipped := pals.FlipBitsToHide(pals.FlipBitsToHide(in))
+	flipped := flipBitsToHide(flipBitsToHide(in))
 	if !pals.TestEq(flipped, in) {
 		t.Errorf("FlipBitForAdmin didn't undo itself: got %s, want %s", flipped, in)
 	}
@@ -225,20 +224,20 @@ func TestFlipBitForAdmin(t *testing.T) {
 
 func TestCBCBitflipping(t *testing.T) {
 	in := []byte(";admin=true")
-	flipped := pals.FlipBitsToHide(in)
-	userData, err := pals.EncryptUserData(append(flipped, flipped...))
+	flipped := flipBitsToHide(in)
+	userData, iv, err := encryptUserData(append(flipped, flipped...))
 	if err != nil {
 		t.Errorf("EncryptUserData threw an error: %s", err)
 		return
 	}
-	b, err := pals.ModifyCiphertextForAdmin(userData.Ciphertext)
+	b, err := modifyCiphertextForAdmin(userData)
 	if err != nil {
 		t.Errorf("ModifyCiphertextForAdmin threw an error: %s", err)
 		return
 	}
 	c := userData
-	c.Ciphertext = b
-	admin, err := pals.DetectAdminString(c)
+	c = b
+	admin, err := detectAdminString(c, iv)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return

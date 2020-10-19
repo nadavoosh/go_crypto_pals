@@ -20,8 +20,8 @@ const (
 type AESMode int
 
 type AES interface {
-	Encrypt(k Key) (EncryptedText, error)
-	Decrypt(k Key) (PlainText, error)
+	Encrypt(k Key) (Ciphertext, error)
+	Decrypt(k Key) (Plaintext, error)
 }
 
 func encryptSingleBlock(cipher cipher.Block, Plaintext []byte) []byte {
@@ -52,8 +52,8 @@ func addRandomBytes(p []byte) ([]byte, error) {
 	return append(append(beforeBytes, p...), afterBytes...), nil
 }
 
-func GuessAESMode(e EncryptedText) AESMode {
-	if SmellsOfECB(e.Ciphertext) {
+func GuessAESMode(e Ciphertext) AESMode {
+	if SmellsOfECB(e) {
 		return ECB
 	}
 	return CBC
@@ -70,7 +70,7 @@ func inferBlocksize(f EncryptionFn) (int, error) {
 		if err != nil {
 			return 0, err
 		}
-		diff := len(next.Ciphertext) - len(initial.Ciphertext)
+		diff := len(next) - len(initial)
 		if diff > 0 {
 			return diff, nil
 		}
@@ -105,16 +105,13 @@ func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
 	return Encryptor{mode: mode, Plaintext: b, Key: Key}, nil
 }
 
-func (o Encryptor) getPlaintext() PlainText {
-	return PlainText{Plaintext: o.Plaintext}
-}
-
-func (o Encryptor) Encrypt() (EncryptedText, error) {
+func (o Encryptor) Encrypt() (Ciphertext, error) {
 	switch o.mode {
 	case ECB:
-		return AES_ECB{PlainText: o.getPlaintext()}.Encrypt(o.Key)
+		return AES_ECB{Plaintext: o.Plaintext}.Encrypt(o.Key)
 	case CBC:
-		return AES_CBC{PlainText: o.getPlaintext()}.Encrypt(o.Key)
+		d := AES_CBC{Plaintext: o.Plaintext}
+		return d.Encrypt(o.Key)
 	}
-	return EncryptedText{}, fmt.Errorf("Mode %v is unknown", o.mode)
+	return nil, fmt.Errorf("Mode %v is unknown", o.mode)
 }

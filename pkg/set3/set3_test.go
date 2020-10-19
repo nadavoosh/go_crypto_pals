@@ -17,29 +17,29 @@ import (
 )
 
 func TestCBCPaddingValidation(t *testing.T) {
-	d, err := padAndEncryptFromSet()
+	d, iv, err := padAndEncryptFromSet()
 	if err != nil {
 		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
 		return
 	}
 	decryptAndValidatePadding := pals.GetValidationFnForOracle(utils.FixedKey)
-	valid, err := decryptAndValidatePadding(d.Ciphertext, d.IV)
+	valid, err := decryptAndValidatePadding(d, iv)
 	if err != nil {
 		t.Errorf("decryptAndValidatePadding threw an error: %s", err)
 		return
 	}
 	if !valid {
-		t.Errorf("decryptAndValidatePadding failed to validate: %s", d.Ciphertext)
+		t.Errorf("decryptAndValidatePadding failed to validate: %s", d)
 	}
 }
 
 func TestCBCPaddingOracle(t *testing.T) {
-	encrypt, err := padAndEncryptFromSet()
+	encrypt, iv, err := padAndEncryptFromSet()
 	if err != nil {
 		t.Errorf("padAndEncrypt(f) threw an error: %s", err)
 		return
 	}
-	oracle := pals.CBCPaddingOracle{IV: encrypt.IV, Ciphertext: encrypt.Ciphertext, ValidationFn: pals.GetValidationFnForOracle(utils.FixedKey)}
+	oracle := pals.CBCPaddingOracle{IV: iv, Ciphertext: encrypt, ValidationFn: pals.GetValidationFnForOracle(utils.FixedKey)}
 	res, err := oracle.Decrypt()
 	if err != nil {
 		t.Errorf("oracle.Decrypt(f) threw an error: %s", err)
@@ -59,29 +59,25 @@ func TestCTRCipher(t *testing.T) {
 	}
 	key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
-	e := pals.CTR{EncryptedText: pals.EncryptedText{
-		Ciphertext: cipherterxt,
-	}, Nonce: nonce}
+	e := pals.CTR{Ciphertext: cipherterxt, Nonce: nonce}
 	p, err := e.Decrypt(key)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
 	want := "Yo, VIP Let's kick it Ice, Ice, baby Ice, Ice, baby "
-	if string(p.Plaintext) != want {
-		t.Errorf("Decrypt returned: %s, want %s", p.Plaintext, want)
+	if string(p) != want {
+		t.Errorf("Decrypt returned: %s, want %s", p, want)
 		return
 	}
-	d := pals.CTR{PlainText: pals.PlainText{
-		Plaintext: []byte(want),
-	}, Nonce: nonce}
+	d := pals.CTR{Plaintext: []byte(want), Nonce: nonce}
 	c, err := d.Encrypt(key)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-	if string(c.Ciphertext) != string(cipherterxt) {
-		t.Errorf("Encrypt returned: %s, want %s", c.Ciphertext, cipherterxt)
+	if string(c) != string(cipherterxt) {
+		t.Errorf("Encrypt returned: %s, want %s", c, cipherterxt)
 		return
 	}
 }
@@ -94,7 +90,7 @@ func min(a, b int) int {
 }
 
 func TestBreakCTRWithGuessing(t *testing.T) {
-	t.Skip("Guessing challenge is meant to be run interactIVely & iteratIVely.")
+	t.Skip("Guessing challenge is meant to be run interactively & iteratively.")
 	filename := "../../challenges/challenge19.txt"
 	lines, err := utils.ScanFile(filename)
 	if err != nil {
@@ -112,16 +108,14 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
 		}
-		d := pals.CTR{PlainText: pals.PlainText{
-			Plaintext: decoded,
-		}, Nonce: nonce}
+		d := pals.CTR{Plaintext: decoded, Nonce: nonce}
 		c, err := d.Encrypt(key)
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
 		}
 		l := min(len(decoded), len(KeystreamGuess))
-		PlaintextBytes := utils.FlexibleXor(KeystreamGuess[:l], c.Ciphertext)
+		PlaintextBytes := utils.FlexibleXor(KeystreamGuess[:l], c)
 		fmt.Println(PlaintextBytes[l:])
 		fmt.Println(string(PlaintextBytes))
 	}
@@ -147,18 +141,16 @@ func TestBreakCTRStatistically(t *testing.T) {
 			return
 		}
 		actual = append(actual, decoded...)
-		d := pals.CTR{PlainText: pals.PlainText{
-			Plaintext: decoded,
-		}, Nonce: nonce}
+		d := pals.CTR{Plaintext: decoded, Nonce: nonce}
 		c, err := d.Encrypt(key)
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
 		}
-		if len(c.Ciphertext) < minLen {
-			minLen = len(c.Ciphertext)
+		if len(c) < minLen {
+			minLen = len(c)
 		}
-		rawCiphertexts = append(rawCiphertexts, c.Ciphertext)
+		rawCiphertexts = append(rawCiphertexts, c)
 	}
 	Ciphertexts := []byte{}
 	for _, Ciphertext := range rawCiphertexts {
@@ -182,7 +174,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 			t.Errorf("%v", err)
 		}
 
-		decryptedString := strings.ToLower(reg.ReplaceAllString(string(got.Plaintext[minLen*i:minLen*(i+1)]), ""))
+		decryptedString := strings.ToLower(reg.ReplaceAllString(string(got[minLen*i:minLen*(i+1)]), ""))
 		actualTrimmedString := strings.ToLower(reg.ReplaceAllString(string(actualBytes[:minLen]), ""))
 
 		if decryptedString != actualTrimmedString {
@@ -267,22 +259,20 @@ func TestCloneMT19937(t *testing.T) {
 func TestMT19937Encryption(t *testing.T) {
 	key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
-	d := pals.AES_MT{PlainText: pals.PlainText{
-		Plaintext: original,
-	}}
+	d := pals.AES_MT{Plaintext: original}
 	c, err := d.Encrypt(key)
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-	p, err := pals.AES_MT{EncryptedText: c}.Decrypt(key)
+	p, err := pals.AES_MT{Ciphertext: c}.Decrypt(key)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
 	}
 
-	if string(p.Plaintext) != string(original) {
-		t.Errorf("Decrypt didn't work. Got\n`%s` instead of \n`%s`\n", p.Plaintext, original)
+	if string(p) != string(original) {
+		t.Errorf("Decrypt didn't work. Got\n`%s` instead of \n`%s`\n", p, original)
 		return
 	}
 }
@@ -303,8 +293,8 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		return
 	}
 
-	randomByteCount := len(c.Ciphertext) - len(base)
-	merseeneValueSlice := utils.FlexibleXor(c.Ciphertext[randomByteCount:len(c.Ciphertext)], base)
+	randomByteCount := len(c) - len(base)
+	merseeneValueSlice := utils.FlexibleXor(c[randomByteCount:len(c)], base)
 	var success bool
 
 	// try all the possible Keys until we find one that generates the known sequence in merseeneValueSlice
@@ -312,8 +302,8 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		m := mersenne.New()
 		m.Seed(i)
 
-		size := len(c.Ciphertext) / pals.MersenneStreamBlockSize
-		if len(c.Ciphertext)%pals.MersenneStreamBlockSize > 0 {
+		size := len(c) / pals.MersenneStreamBlockSize
+		if len(c)%pals.MersenneStreamBlockSize > 0 {
 			size++
 		}
 
@@ -323,7 +313,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 		for i := 0; i < numbersNeeded; i++ {
 			binary.LittleEndian.PutUint32(comparison[(i*mersenneNumberBytes):], m.Uint32())
 		}
-		if string(merseeneValueSlice) == string(comparison[randomByteCount:len(c.Ciphertext)]) {
+		if string(merseeneValueSlice) == string(comparison[randomByteCount:len(c)]) {
 			success = true
 			break
 		}
@@ -333,7 +323,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 	}
 }
 
-func tokenOracle() (pals.EncryptedText, error) {
+func tokenOracle() (pals.Ciphertext, error) {
 	Plaintext := bytes.Repeat(utils.ByteA, mathRand.Intn(20)+4)
 	return mersenneEncrypt(Plaintext, uint16(time.Now().Unix()))
 }
@@ -347,7 +337,7 @@ func isTokenForRecentTime(token string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if string(c.Ciphertext) == token {
+		if string(c) == token {
 			return true, nil
 		}
 	}
@@ -360,7 +350,7 @@ func TestGeneratePasswordResetToken(t *testing.T) {
 		t.Errorf("tokenOracle threw an error: %s", err)
 		return
 	}
-	found, err := isTokenForRecentTime(string(token.Ciphertext))
+	found, err := isTokenForRecentTime(string(token))
 	if err != nil {
 		t.Errorf("isTokenForRecentTime threw an error: %s", err)
 		return

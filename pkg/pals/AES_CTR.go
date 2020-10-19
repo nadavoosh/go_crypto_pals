@@ -9,9 +9,9 @@ import (
 )
 
 type CTR struct {
-	PlainText     PlainText
-	EncryptedText EncryptedText
-	Nonce         int64
+	Plaintext
+	Ciphertext
+	Nonce int64
 }
 
 func int64ToByteArray(i int64) []byte {
@@ -29,9 +29,9 @@ func getKeystream(Key []byte, nonce, count int64) ([]byte, error) {
 	return encryptSingleBlock(c, counter), nil
 }
 
-func (c CTR) Encrypt(k Key) (EncryptedText, error) {
-	e := EncryptedText{}
-	blocks := chunk(c.PlainText.Plaintext, aes.BlockSize)
+func (c CTR) Encrypt(k Key) (Ciphertext, error) {
+	e := Ciphertext{}
+	blocks := chunk(c.Plaintext, aes.BlockSize)
 	for i, block := range blocks {
 		Keystream, err := getKeystream(k, c.Nonce, int64(i))
 		if err != nil {
@@ -39,14 +39,14 @@ func (c CTR) Encrypt(k Key) (EncryptedText, error) {
 		}
 		trimmedKeystream := Keystream[:len(block)]
 		cipher := utils.FlexibleXor(block, trimmedKeystream)
-		e.Ciphertext = append(e.Ciphertext, cipher...)
+		e = append(e, cipher...)
 	}
 	return e, nil
 }
 
-func (c CTR) Decrypt(k Key) (PlainText, error) {
-	d := PlainText{}
-	blocks := chunk(c.EncryptedText.Ciphertext, aes.BlockSize)
+func (c CTR) Decrypt(k Key) (Plaintext, error) {
+	d := Plaintext{}
+	blocks := chunk(c.Ciphertext, aes.BlockSize)
 	for i, block := range blocks {
 		Keystream, err := getKeystream(k, c.Nonce, int64(i))
 		if err != nil {
@@ -54,7 +54,7 @@ func (c CTR) Decrypt(k Key) (PlainText, error) {
 		}
 		trimmedKeystream := Keystream[:len(block)]
 		plain := utils.FlexibleXor(block, trimmedKeystream)
-		d.Plaintext = append(d.Plaintext, plain...)
+		d = append(d, plain...)
 	}
 	return d, nil
 }
