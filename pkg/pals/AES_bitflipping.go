@@ -46,7 +46,6 @@ func parseString(s string) map[string]string {
 		} else {
 			fmt.Printf("No `=` found in %s\n", pair)
 		}
-
 	}
 	return m
 }
