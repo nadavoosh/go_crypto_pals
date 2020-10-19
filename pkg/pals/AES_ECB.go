@@ -6,34 +6,39 @@ import (
 	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 )
 
-func DecryptECB(e EncryptedText) (PlainText, error) {
-	cipher, err := aes.NewCipher(e.Key)
+type AES_ECB struct {
+	PlainText     PlainText
+	EncryptedText EncryptedText
+}
+
+func (c AES_ECB) Decrypt() (PlainText, error) {
+	cipher, err := aes.NewCipher(c.EncryptedText.Key)
 	if err != nil {
 		return PlainText{}, err
 	}
 	var Plaintext []byte
-	blocks := chunk(e.Ciphertext, aes.BlockSize)
+	blocks := chunk(c.EncryptedText.Ciphertext, aes.BlockSize)
 	for _, block := range blocks {
 		Plaintext = append(Plaintext, decryptSingleBlock(cipher, block)...)
 	}
-	if e.Padding == padding.PKCS {
+	if c.EncryptedText.Padding == padding.PKCS {
 		Plaintext = padding.RemovePKCSPadding(Plaintext)
 	}
 	return PlainText{Plaintext: Plaintext}, nil
 }
 
-func encryptECB(d PlainText) (EncryptedText, error) {
-	cipher, err := aes.NewCipher(d.Key)
+func (c AES_ECB) Encrypt() (EncryptedText, error) {
+	cipher, err := aes.NewCipher(c.PlainText.Key)
 	if err != nil {
 		return EncryptedText{}, err
 	}
 	var Ciphertext []byte
-	padded := padding.PKCSPadding(d.Plaintext, aes.BlockSize)
+	padded := padding.PKCSPadding(c.PlainText.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	for _, block := range blocks {
 		Ciphertext = append(Ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS, CryptoMaterial: CryptoMaterial{Key: d.Key}}, nil
+	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS, CryptoMaterial: CryptoMaterial{Key: c.PlainText.Key}}, nil
 }
 
 func SmellsOfECB(b []byte) bool {

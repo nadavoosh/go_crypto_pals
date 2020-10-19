@@ -26,8 +26,6 @@ type AES interface {
 
 func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 	switch mode {
-	case ECB:
-		return encryptECB(d)
 	case CBC:
 		if d.IV == nil {
 			IV, err := utils.GenerateRandomBlock()
@@ -38,14 +36,12 @@ func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
 		}
 		return encryptCBC(d)
 	default:
-		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
+		return EncryptedText{}, fmt.Errorf("Mode %v unknown", mode)
 	}
 }
 
 func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 	switch mode {
-	case ECB:
-		return DecryptECB(e)
 	case CBC:
 		if e.IV == nil {
 			IV, err := utils.GenerateRandomBlock()
@@ -56,7 +52,7 @@ func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
 		}
 		return DecryptCBC(e)
 	default:
-		return PlainText{}, fmt.Errorf("Mode %d unknown", mode)
+		return PlainText{}, fmt.Errorf("Mode %v unknown", mode)
 	}
 }
 
@@ -148,9 +144,9 @@ func (o Encryptor) getPlaintext() PlainText {
 func (o Encryptor) Encrypt() (EncryptedText, error) {
 	switch o.mode {
 	case ECB:
-		return Encrypt(ECB, o.getPlaintext())
+		return AES_ECB{PlainText: o.getPlaintext()}.Encrypt()
 	case CBC:
 		return Encrypt(CBC, o.getPlaintext())
 	}
-	return EncryptedText{}, fmt.Errorf("Mode %d unknown", o.mode)
+	return EncryptedText{}, fmt.Errorf("Mode %v is unknown", o.mode)
 }
