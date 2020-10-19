@@ -94,7 +94,7 @@ func min(a, b int) int {
 }
 
 func TestBreakCTRWithGuessing(t *testing.T) {
-	t.Skip("Guessing challenge is meant to be run interactIVely & iteratIVely.")
+	t.Skip("Guessing challenge is meant to be run interactively & iteratively.")
 	filename := "../../challenges/challenge19.txt"
 	lines, err := utils.ScanFile(filename)
 	if err != nil {

@@ -50,11 +50,13 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := pals.AES_CBC{Plaintext: []byte(in), IV: IV}.Encrypt(key)
+	a := pals.AES_CBC{Plaintext: []byte(in), IV: IV}
+	c, err := a.Encrypt(key)
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	got, err := pals.AES_CBC{Ciphertext: []byte(c), IV: IV}.Decrypt(key)
+	b := pals.AES_CBC{Ciphertext: []byte(c), IV: IV}
+	got, err := b.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptCBC threw an error: %s", err)
 	}
@@ -70,8 +72,8 @@ func TestEncryptCBC(t *testing.T) {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
 	key := []byte("YELLOW SUBMARINE")
-
-	got, err := pals.AES_CBC{Ciphertext: decoded, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}.Decrypt(key)
+	a := pals.AES_CBC{Ciphertext: decoded, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
+	got, err := a.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptCBC threw an error: %s", err)
 	}
@@ -198,12 +200,12 @@ func TestPaddingValidation(t *testing.T) {
 
 func TestAdminEscape(t *testing.T) {
 	in := []byte(";admin=true;asdf=asdf")
-	userData, err := encryptUserData(in)
+	userData, iv, err := encryptUserData(in)
 	if err != nil {
 		t.Errorf("EncryptUserData(f) threw an error: %s", err)
 		return
 	}
-	admin, err := detectAdminString(userData)
+	admin, err := detectAdminString(userData, iv)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return
@@ -223,7 +225,7 @@ func TestFlipBitForAdmin(t *testing.T) {
 func TestCBCBitflipping(t *testing.T) {
 	in := []byte(";admin=true")
 	flipped := flipBitsToHide(in)
-	userData, err := encryptUserData(append(flipped, flipped...))
+	userData, iv, err := encryptUserData(append(flipped, flipped...))
 	if err != nil {
 		t.Errorf("EncryptUserData threw an error: %s", err)
 		return
@@ -235,7 +237,7 @@ func TestCBCBitflipping(t *testing.T) {
 	}
 	c := userData
 	c = b
-	admin, err := detectAdminString(c)
+	admin, err := detectAdminString(c, iv)
 	if err != nil {
 		t.Errorf("DetectAdminString(f) threw an error: %s", err)
 		return

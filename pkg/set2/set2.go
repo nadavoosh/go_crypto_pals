@@ -102,11 +102,13 @@ func buildAdminProfile(email string) (pals.Ciphertext, error) {
 	return pals.Ciphertext(append(emailUIDBlock, adminBlock...)), err
 }
 
-func encryptUserData(input []byte) (pals.Ciphertext, error) {
+func encryptUserData(input []byte) (pals.Ciphertext, pals.IV, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
 	p := append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
-	return pals.AES_CBC{Plaintext: p}.Encrypt(utils.FixedKey)
+	d := pals.AES_CBC{Plaintext: p}
+	c, err := d.Encrypt(utils.FixedKey)
+	return c, d.IV, err
 }
 
 func splitString(s, sep string) []string {
@@ -142,8 +144,9 @@ func parseString(s string) map[string]string {
 	return m
 }
 
-func detectAdminString(e pals.Ciphertext) (bool, error) {
-	plain, err := pals.AES_CBC{Ciphertext: e}.Decrypt(utils.FixedKey)
+func detectAdminString(e pals.Ciphertext, iv pals.IV) (bool, error) {
+	a := pals.AES_CBC{Ciphertext: e, IV: iv}
+	plain, err := a.Decrypt(utils.FixedKey)
 	if err != nil {
 		return false, err
 	}

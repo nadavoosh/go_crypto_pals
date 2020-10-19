@@ -110,7 +110,8 @@ func (o Encryptor) Encrypt() (Ciphertext, error) {
 	case ECB:
 		return AES_ECB{Plaintext: o.Plaintext}.Encrypt(o.Key)
 	case CBC:
-		return AES_CBC{Plaintext: o.Plaintext}.Encrypt(o.Key)
+		d := AES_CBC{Plaintext: o.Plaintext}
+		return d.Encrypt(o.Key)
 	}
 	return nil, fmt.Errorf("Mode %v is unknown", o.mode)
 }

@@ -14,7 +14,7 @@ type AES_CBC struct {
 	IV IV
 }
 
-func (cbc AES_CBC) Encrypt(k Key) (Ciphertext, error) {
+func (cbc *AES_CBC) Encrypt(k Key) (Ciphertext, error) {
 	if cbc.IV == nil {
 		iv, err := utils.GenerateRandomBlock()
 		if err != nil {
@@ -37,7 +37,7 @@ func (cbc AES_CBC) Encrypt(k Key) (Ciphertext, error) {
 	return e, nil
 }
 
-func (cbc AES_CBC) Decrypt(k Key) (Plaintext, error) {
+func (cbc *AES_CBC) Decrypt(k Key) (Plaintext, error) {
 	d := Plaintext{}
 	blocks := chunk(cbc.Ciphertext, aes.BlockSize)
 	priorCiphertext := cbc.IV
