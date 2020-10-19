@@ -12,26 +12,22 @@ const MersenneStreamBlockSize = 8
 type AES_MT struct {
 	PlainText     PlainText
 	EncryptedText EncryptedText
+	MT            *mersenne.MT19937
 }
 
-func seedFromKeyD(d *PlainText) {
-	d.MT = mersenne.New()
-	d.MT.Seed(int(binary.BigEndian.Uint16(d.Key)))
+func (m *AES_MT) seedFromKey(key []byte) {
+	m.MT = mersenne.New()
+	m.MT.Seed(int(binary.BigEndian.Uint16(key)))
 }
 
-func seedFromKeyE(e *EncryptedText) {
-	e.MT = mersenne.New()
-	e.MT.Seed(int(binary.BigEndian.Uint16(e.Key)))
-}
-
-func (m AES_MT) Encrypt() (EncryptedText, error) {
-	seedFromKeyD(&m.PlainText)
-	return EncryptedText{CryptoMaterial: CryptoMaterial{Key: m.PlainText.Key}, Ciphertext: doMT(m.PlainText.Plaintext, m.PlainText.MT)}, nil
+func (m *AES_MT) Encrypt() (EncryptedText, error) {
+	m.seedFromKey(m.PlainText.Key)
+	return EncryptedText{Key: m.PlainText.Key, Ciphertext: doMT(m.PlainText.Plaintext, m.MT)}, nil
 }
 
 func (m AES_MT) Decrypt() (PlainText, error) {
-	seedFromKeyE(&m.EncryptedText)
-	return PlainText{CryptoMaterial: CryptoMaterial{Key: m.EncryptedText.Key}, Plaintext: doMT(m.EncryptedText.Ciphertext, m.EncryptedText.MT)}, nil
+	m.seedFromKey(m.EncryptedText.Key)
+	return PlainText{Key: m.EncryptedText.Key, Plaintext: doMT(m.EncryptedText.Ciphertext, m.MT)}, nil
 }
 
 func getMTKeystream(m *mersenne.MT19937) []byte {

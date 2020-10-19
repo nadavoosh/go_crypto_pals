@@ -38,7 +38,7 @@ func (c AES_ECB) Encrypt() (EncryptedText, error) {
 	for _, block := range blocks {
 		Ciphertext = append(Ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS, CryptoMaterial: CryptoMaterial{Key: c.PlainText.Key}}, nil
+	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS, Key: c.PlainText.Key}, nil
 }
 
 func SmellsOfECB(b []byte) bool {

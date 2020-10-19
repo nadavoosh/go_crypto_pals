@@ -12,8 +12,8 @@ func EncryptUserData(input []byte) (EncryptedText, error) {
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
 	Plaintext := append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
 	return AES_CBC{PlainText: PlainText{
-		Plaintext:      Plaintext,
-		CryptoMaterial: CryptoMaterial{Key: utils.FixedKey},
+		Plaintext: Plaintext,
+		Key:       utils.FixedKey,
 	}}.Encrypt()
 }
 

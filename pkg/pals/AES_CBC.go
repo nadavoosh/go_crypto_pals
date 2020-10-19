@@ -21,7 +21,7 @@ func (cbc AES_CBC) Encrypt() (EncryptedText, error) {
 		}
 		cbc.PlainText.IV = IV
 	}
-	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: cbc.PlainText.Key, IV: cbc.PlainText.IV}}
+	e := EncryptedText{Key: cbc.PlainText.Key, IV: cbc.PlainText.IV}
 	padded := padding.PKCSPadding(cbc.PlainText.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	cipher := cbc.PlainText.IV
@@ -37,7 +37,7 @@ func (cbc AES_CBC) Encrypt() (EncryptedText, error) {
 }
 
 func (cbc AES_CBC) Decrypt() (PlainText, error) {
-	d := PlainText{CryptoMaterial: CryptoMaterial{Key: cbc.EncryptedText.Key}}
+	d := PlainText{Key: cbc.EncryptedText.Key}
 	blocks := chunk(cbc.EncryptedText.Ciphertext, aes.BlockSize)
 	priorCiphertext := cbc.EncryptedText.IV
 	c, err := aes.NewCipher(cbc.EncryptedText.Key)

@@ -11,7 +11,7 @@ import (
 
 func GetValidationFnForOracle(Key []byte) ValidationFn {
 	return func(Ciphertext, IV []byte) (bool, error) {
-		e := EncryptedText{Ciphertext: Ciphertext, CryptoMaterial: CryptoMaterial{Key: Key, IV: IV}}
+		e := EncryptedText{Ciphertext: Ciphertext, Key: Key, IV: IV}
 		_, err := AES_CBC{EncryptedText: e}.Decrypt()
 		if err != nil {
 			if err.Error() == "Invalid Padding" {
