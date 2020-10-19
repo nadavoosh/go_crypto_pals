@@ -50,12 +50,12 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := pals.Encrypt(pals.CBC, pals.PlainText{Plaintext: []byte(in), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}})
+	c, err := pals.AES_CBC{PlainText: pals.PlainText{Plaintext: []byte(in), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}}.Encrypt()
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
 	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), CryptoMaterial: pals.CryptoMaterial{Key: key, IV: IV}}
-	got, err := pals.Decrypt(pals.CBC, in2)
+	got, err := pals.AES_CBC{EncryptedText: in2}.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in2, err)
 	}
@@ -72,7 +72,8 @@ func TestEncryptCBC(t *testing.T) {
 	}
 	Key := []byte("YELLOW SUBMARINE")
 	in := pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: Key, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}}
-	got, err := pals.DecryptCBC(in)
+
+	got, err := pals.AES_CBC{EncryptedText: in}.Decrypt()
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
