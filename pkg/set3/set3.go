@@ -35,9 +35,9 @@ func mersenneEncrypt(Plaintext []byte, seed uint16) (pals.EncryptedText, error) 
 	KeyByteArray := make([]byte, 2)
 	binary.BigEndian.PutUint16(KeyByteArray, seed)
 
-	d := pals.PlainText{
+	d := pals.AES_MT{PlainText: pals.PlainText{
 		Plaintext:      Plaintext,
 		CryptoMaterial: pals.CryptoMaterial{Key: KeyByteArray},
-	}
-	return pals.Encrypt(pals.MT, d)
+	}}
+	return d.Encrypt()
 }

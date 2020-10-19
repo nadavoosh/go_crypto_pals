@@ -271,17 +271,16 @@ func TestCloneMT19937(t *testing.T) {
 func TestMT19937Encryption(t *testing.T) {
 	Key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
-	d := pals.PlainText{
+	d := pals.AES_MT{PlainText: pals.PlainText{
 		Plaintext:      original,
 		CryptoMaterial: pals.CryptoMaterial{Key: Key},
-	}
-	c, err := pals.Encrypt(pals.MT, d)
+	}}
+	c, err := d.Encrypt()
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-
-	p, err := pals.Decrypt(pals.MT, c)
+	p, err := pals.AES_MT{EncryptedText: c}.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
