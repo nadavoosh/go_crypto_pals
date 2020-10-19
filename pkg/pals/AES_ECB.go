@@ -11,6 +11,10 @@ type AES_ECB struct {
 	EncryptedText EncryptedText
 }
 
+func NewAESECB(p PlainText) AES_ECB {
+	return AES_ECB{PlainText: p}
+}
+
 func (c AES_ECB) Decrypt() (PlainText, error) {
 	cipher, err := aes.NewCipher(c.EncryptedText.Key)
 	if err != nil {

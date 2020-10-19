@@ -32,7 +32,7 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), Key: key}}.Encrypt()
+	c, err := pals.NewAESECB(pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded), Key: key}).Encrypt()
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}

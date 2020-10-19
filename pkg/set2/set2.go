@@ -15,14 +15,14 @@ import (
 
 func appendAndEncrypt(a []byte) pals.EncryptionFn {
 	return func(plain []byte) (pals.EncryptedText, error) {
-		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(plain, a...), Key: utils.FixedKey}}
+		d := pals.NewAESECB(pals.PlainText{Plaintext: append(plain, a...), Key: utils.FixedKey})
 		return d.Encrypt()
 	}
 }
 
 func prependAndAppendAndEncrypt(a []byte) pals.EncryptionFn {
 	return func(plain []byte) (pals.EncryptedText, error) {
-		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(append(utils.FixedBytes, plain...), a...), Key: utils.FixedKey}}
+		d := pals.NewAESECB(pals.PlainText{Plaintext: append(append(utils.FixedBytes, plain...), a...), Key: utils.FixedKey})
 		return d.Encrypt()
 	}
 }
@@ -76,7 +76,7 @@ func profileFor(email []byte) profile {
 
 func encryptedProfileFor(email []byte) (pals.EncryptedText, error) {
 	p := profileFor(email).encode()
-	return pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(p), Key: utils.FixedKey}}.Encrypt()
+	return pals.NewAESECB(pals.PlainText{Plaintext: []byte(p), Key: utils.FixedKey}).Encrypt()
 }
 
 func getBytesOfLen(l int) []byte {
