@@ -9,10 +9,10 @@ import (
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-func GetValidationFnForOracle(Key []byte) ValidationFn {
+func GetValidationFnForOracle(k Key) ValidationFn {
 	return func(Ciphertext, IV []byte) (bool, error) {
-		e := EncryptedText{Ciphertext: Ciphertext, Key: Key, IV: IV}
-		_, err := AES_CBC{EncryptedText: e}.Decrypt()
+		e := EncryptedText{Ciphertext: Ciphertext, IV: IV}
+		_, err := AES_CBC{EncryptedText: e}.Decrypt(k)
 		if err != nil {
 			if err.Error() == "Invalid Padding" {
 				return false, nil

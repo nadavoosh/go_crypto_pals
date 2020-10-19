@@ -27,8 +27,8 @@ func padAndEncryptFromSet() (pals.EncryptedText, error) {
 	if err != nil {
 		return pals.EncryptedText{}, err
 	}
-	d := pals.PlainText{Plaintext: []byte(Plaintext), Key: utils.FixedKey, IV: utils.GenerateKey()}
-	return pals.AES_CBC{PlainText: d}.Encrypt()
+	d := pals.PlainText{Plaintext: []byte(Plaintext), IV: utils.GenerateKey()}
+	return pals.AES_CBC{PlainText: d}.Encrypt(utils.FixedKey)
 }
 
 func mersenneEncrypt(Plaintext []byte, seed uint16) (pals.EncryptedText, error) {
@@ -37,7 +37,6 @@ func mersenneEncrypt(Plaintext []byte, seed uint16) (pals.EncryptedText, error) 
 
 	d := pals.AES_MT{PlainText: pals.PlainText{
 		Plaintext: Plaintext,
-		Key:       KeyByteArray,
 	}}
-	return d.Encrypt()
+	return d.Encrypt(KeyByteArray)
 }

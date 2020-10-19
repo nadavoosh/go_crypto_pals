@@ -11,8 +11,12 @@ type AES_ECB struct {
 	EncryptedText EncryptedText
 }
 
-func (c AES_ECB) Decrypt() (PlainText, error) {
-	cipher, err := aes.NewCipher(c.EncryptedText.Key)
+func NewAESECB(p PlainText) AES_ECB {
+	return AES_ECB{PlainText: p}
+}
+
+func (c AES_ECB) Decrypt(k Key) (PlainText, error) {
+	cipher, err := aes.NewCipher(k)
 	if err != nil {
 		return PlainText{}, err
 	}
@@ -27,8 +31,8 @@ func (c AES_ECB) Decrypt() (PlainText, error) {
 	return PlainText{Plaintext: Plaintext}, nil
 }
 
-func (c AES_ECB) Encrypt() (EncryptedText, error) {
-	cipher, err := aes.NewCipher(c.PlainText.Key)
+func (c AES_ECB) Encrypt(k Key) (EncryptedText, error) {
+	cipher, err := aes.NewCipher(k)
 	if err != nil {
 		return EncryptedText{}, err
 	}
@@ -38,7 +42,7 @@ func (c AES_ECB) Encrypt() (EncryptedText, error) {
 	for _, block := range blocks {
 		Ciphertext = append(Ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS, Key: c.PlainText.Key}, nil
+	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS}, nil
 }
 
 func SmellsOfECB(b []byte) bool {

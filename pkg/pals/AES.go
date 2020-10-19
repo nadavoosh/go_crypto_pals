@@ -20,8 +20,8 @@ const (
 type AESMode int
 
 type AES interface {
-	Encrypt() (EncryptedText, error)
-	Decrypt() (PlainText, error)
+	Encrypt(k Key) (EncryptedText, error)
+	Decrypt(k Key) (PlainText, error)
 }
 
 func encryptSingleBlock(cipher cipher.Block, Plaintext []byte) []byte {
@@ -106,15 +106,15 @@ func NewEncryptor(plain []byte, mode AESMode) (Encryptor, error) {
 }
 
 func (o Encryptor) getPlaintext() PlainText {
-	return PlainText{Plaintext: o.Plaintext, Key: o.Key}
+	return PlainText{Plaintext: o.Plaintext}
 }
 
 func (o Encryptor) Encrypt() (EncryptedText, error) {
 	switch o.mode {
 	case ECB:
-		return AES_ECB{PlainText: o.getPlaintext()}.Encrypt()
+		return AES_ECB{PlainText: o.getPlaintext()}.Encrypt(o.Key)
 	case CBC:
-		return AES_CBC{PlainText: o.getPlaintext()}.Encrypt()
+		return AES_CBC{PlainText: o.getPlaintext()}.Encrypt(o.Key)
 	}
 	return EncryptedText{}, fmt.Errorf("Mode %v is unknown", o.mode)
 }

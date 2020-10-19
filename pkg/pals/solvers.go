@@ -10,14 +10,14 @@ import (
 )
 
 type EncryptedText struct {
-	Key        []byte
 	Ciphertext []byte
 	Padding    padding.Padding
 	IV         []byte
 }
 
+type Key []byte
+
 type PlainText struct {
-	Key       []byte
 	Plaintext []byte
 	IV        []byte
 }
@@ -39,26 +39,28 @@ func (d PlainText) minimize() float64 {
 }
 
 // SolveSingleByteXorCipherHex examines the input XORed against a single character, and returns the most likely original text and Key, based on english character frequency
-func SolveSingleByteXorCipherHex(h utils.HexEncoded) (PlainText, error) {
+func SolveSingleByteXorCipherHex(h utils.HexEncoded) (PlainText, Key, error) {
 	return SolveSingleByteXorCipher(h.GetBytes())
 }
 
 // SolveSingleByteXorCipher examines the input XORed against a single character, and returns the most likely original text and Key, based on english character frequency
-func SolveSingleByteXorCipher(hBytes []byte) (PlainText, error) {
+func SolveSingleByteXorCipher(hBytes []byte) (PlainText, Key, error) {
 	var res PlainText
+	var resultKey []byte
 	var newScore float64
 	for i := 0; i < 256; i++ {
 		t, err := utils.SingleByteXor(hBytes, byte(i))
 		if err != nil {
 			log.Fatal(err)
 		}
-		tprime := PlainText{Plaintext: t, Key: []byte{byte(i)}}
+		tprime := PlainText{Plaintext: t}
 		newScore = tprime.score()
 		if newScore < res.score() {
 			res = tprime
+			resultKey = []byte{byte(i)}
 		}
 	}
-	return res, nil
+	return res, resultKey, nil
 }
 
 func getLetterFreqMapForEnglish() map[string]float64 {
@@ -119,7 +121,7 @@ func getScore(text []byte) float64 {
 func DetectSingleByteXorCipher(lines []string) (PlainText, error) {
 	var res PlainText
 	for _, h := range lines {
-		s, err := SolveSingleByteXorCipherHex(utils.HexEncoded{HexString: h})
+		s, _, err := SolveSingleByteXorCipherHex(utils.HexEncoded{HexString: h})
 		if err != nil {
 			return s, err
 		}

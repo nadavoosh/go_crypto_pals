@@ -13,7 +13,7 @@ type AES_CBC struct {
 	EncryptedText EncryptedText
 }
 
-func (cbc AES_CBC) Encrypt() (EncryptedText, error) {
+func (cbc AES_CBC) Encrypt(k Key) (EncryptedText, error) {
 	if cbc.PlainText.IV == nil {
 		IV, err := utils.GenerateRandomBlock()
 		if err != nil {
@@ -21,11 +21,11 @@ func (cbc AES_CBC) Encrypt() (EncryptedText, error) {
 		}
 		cbc.PlainText.IV = IV
 	}
-	e := EncryptedText{Key: cbc.PlainText.Key, IV: cbc.PlainText.IV}
+	e := EncryptedText{IV: cbc.PlainText.IV}
 	padded := padding.PKCSPadding(cbc.PlainText.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	cipher := cbc.PlainText.IV
-	c, err := aes.NewCipher(cbc.PlainText.Key)
+	c, err := aes.NewCipher(k)
 	if err != nil {
 		return e, err
 	}
@@ -36,11 +36,11 @@ func (cbc AES_CBC) Encrypt() (EncryptedText, error) {
 	return e, nil
 }
 
-func (cbc AES_CBC) Decrypt() (PlainText, error) {
-	d := PlainText{Key: cbc.EncryptedText.Key}
+func (cbc AES_CBC) Decrypt(k Key) (PlainText, error) {
+	d := PlainText{}
 	blocks := chunk(cbc.EncryptedText.Ciphertext, aes.BlockSize)
 	priorCiphertext := cbc.EncryptedText.IV
-	c, err := aes.NewCipher(cbc.EncryptedText.Key)
+	c, err := aes.NewCipher(k)
 	if err != nil {
 		return d, err
 	}
