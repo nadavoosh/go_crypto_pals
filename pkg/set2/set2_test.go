@@ -2,7 +2,6 @@ package set2
 
 import (
 	"crypto/aes"
-	"fmt"
 	"math/rand"
 	"testing"
 	"time"
@@ -132,16 +131,13 @@ func TestEncryptProfile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
-	encPrime := pals.AES_ECB{Ciphertext: enc}
+	encPrime := pals.AES_ECB{Ciphertext: enc, Padding: padding.PKCS}
 	role, err := encPrime.Decrypt(utils.FixedKey)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 	}
 	cookie := parseCookie(string(role))
 	if cookie["role"] != "user" || cookie["email"] != string(email) || cookie["uid"] != "10" {
-		fmt.Println(cookie["role"] != "user")
-		fmt.Println(cookie["role"] == "user")
-		fmt.Printf("====%v=====\n", cookie["role"])
 		t.Errorf("parseCookie for %s returned: %s", email, cookie)
 	}
 }
@@ -154,7 +150,7 @@ func TestCreateAdminProfile(t *testing.T) {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
 		return
 	}
-	encPrime := pals.AES_ECB{Ciphertext: enc}
+	encPrime := pals.AES_ECB{Ciphertext: enc, Padding: padding.PKCS}
 	role, err := encPrime.Decrypt(utils.FixedKey)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
@@ -163,7 +159,6 @@ func TestCreateAdminProfile(t *testing.T) {
 	cookie := parseCookie(string(role))
 
 	if cookie["role"] != "admin" {
-		t.Errorf(string(role))
 		t.Errorf("BuildAdminProfile did not return an admin profile, got %s ", cookie["role"])
 	}
 }
