@@ -3,32 +3,38 @@ package pals
 import (
 	"encoding/binary"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 const MersenneStreamBlockSize = 8
 
+type AES_MT struct {
+	PlainText     PlainText
+	EncryptedText EncryptedText
+}
+
 func seedFromKeyD(d *PlainText) {
-	d.MT = NewMersenneTwister()
+	d.MT = mersenne.New()
 	d.MT.Seed(int(binary.BigEndian.Uint16(d.Key)))
 }
 
 func seedFromKeyE(e *EncryptedText) {
-	e.MT = NewMersenneTwister()
+	e.MT = mersenne.New()
 	e.MT.Seed(int(binary.BigEndian.Uint16(e.Key)))
 }
 
-func encryptMT(d PlainText) (EncryptedText, error) {
-	seedFromKeyD(&d)
-	return EncryptedText{CryptoMaterial: CryptoMaterial{Key: d.Key}, Ciphertext: doMT(d.Plaintext, d.MT)}, nil
+func (m AES_MT) Encrypt() (EncryptedText, error) {
+	seedFromKeyD(&m.PlainText)
+	return EncryptedText{CryptoMaterial: CryptoMaterial{Key: m.PlainText.Key}, Ciphertext: doMT(m.PlainText.Plaintext, m.PlainText.MT)}, nil
 }
 
-func decryptMT(e EncryptedText) (PlainText, error) {
-	seedFromKeyE(&e)
-	return PlainText{CryptoMaterial: CryptoMaterial{Key: e.Key}, Plaintext: doMT(e.Ciphertext, e.MT)}, nil
+func (m AES_MT) Decrypt() (PlainText, error) {
+	seedFromKeyE(&m.EncryptedText)
+	return PlainText{CryptoMaterial: CryptoMaterial{Key: m.EncryptedText.Key}, Plaintext: doMT(m.EncryptedText.Ciphertext, m.EncryptedText.MT)}, nil
 }
 
-func getMTKeystream(m *MT19937) []byte {
+func getMTKeystream(m *mersenne.MT19937) []byte {
 	Keystream := make([]byte, MersenneStreamBlockSize)
 	mersenneNumberBytes := 4 // each mersenne number is 32 bits long, which is 4 bytes of Keystream
 	for i := 0; i < MersenneStreamBlockSize/mersenneNumberBytes; i++ {
@@ -37,7 +43,7 @@ func getMTKeystream(m *MT19937) []byte {
 	return Keystream
 }
 
-func doMT(orig []byte, m *MT19937) []byte {
+func doMT(orig []byte, m *mersenne.MT19937) []byte {
 	if m == nil {
 		panic("oops")
 	}

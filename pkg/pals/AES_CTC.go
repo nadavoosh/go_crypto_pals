@@ -8,6 +8,11 @@ import (
 	// "fmt"
 )
 
+type CTC struct {
+	PlainText     PlainText
+	EncryptedText EncryptedText
+}
+
 func int64ToByteArray(i int64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, uint64(i))
@@ -23,11 +28,11 @@ func getKeystream(Key []byte, nonce, count int64) ([]byte, error) {
 	return encryptSingleBlock(c, counter), nil
 }
 
-func encryptCTC(d PlainText) (EncryptedText, error) {
-	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: d.Key}}
-	blocks := chunk(d.Plaintext, aes.BlockSize)
+func (c CTC) Encrypt() (EncryptedText, error) {
+	e := EncryptedText{CryptoMaterial: CryptoMaterial{Key: c.PlainText.Key}}
+	blocks := chunk(c.PlainText.Plaintext, aes.BlockSize)
 	for i, block := range blocks {
-		Keystream, err := getKeystream(d.Key, d.Nonce, int64(i))
+		Keystream, err := getKeystream(c.PlainText.Key, c.PlainText.Nonce, int64(i))
 		if err != nil {
 			return e, err
 		}
@@ -38,11 +43,11 @@ func encryptCTC(d PlainText) (EncryptedText, error) {
 	return e, nil
 }
 
-func decryptCTC(e EncryptedText) (PlainText, error) {
-	d := PlainText{CryptoMaterial: CryptoMaterial{Key: e.Key}}
-	blocks := chunk(e.Ciphertext, aes.BlockSize)
+func (c CTC) Decrypt() (PlainText, error) {
+	d := PlainText{CryptoMaterial: CryptoMaterial{Key: c.EncryptedText.Key}}
+	blocks := chunk(c.EncryptedText.Ciphertext, aes.BlockSize)
 	for i, block := range blocks {
-		Keystream, err := getKeystream(d.Key, e.Nonce, int64(i))
+		Keystream, err := getKeystream(d.Key, c.EncryptedText.Nonce, int64(i))
 		if err != nil {
 			return d, err
 		}

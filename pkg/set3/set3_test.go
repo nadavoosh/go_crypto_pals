@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/mersenne"
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
@@ -58,11 +59,11 @@ func TestCTRCipher(t *testing.T) {
 	}
 	Key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
-	e := pals.EncryptedText{
+	e := pals.CTC{EncryptedText: pals.EncryptedText{
 		Ciphertext:     cipherterxt,
 		CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-	}
-	p, err := pals.Decrypt(pals.CTC, e)
+	}}
+	p, err := e.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
@@ -72,11 +73,11 @@ func TestCTRCipher(t *testing.T) {
 		t.Errorf("Decrypt returned: %s, want %s", p.Plaintext, want)
 		return
 	}
-	d := pals.PlainText{
+	d := pals.CTC{PlainText: pals.PlainText{
 		Plaintext:      []byte(want),
 		CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-	}
-	c, err := pals.Encrypt(pals.CTC, d)
+	}}
+	c, err := d.Encrypt()
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
@@ -113,11 +114,11 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
 		}
-		d := pals.PlainText{
+		d := pals.CTC{PlainText: pals.PlainText{
 			Plaintext:      decoded,
 			CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-		}
-		c, err := pals.Encrypt(pals.CTC, d)
+		}}
+		c, err := d.Encrypt()
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
@@ -149,11 +150,11 @@ func TestBreakCTRStatistically(t *testing.T) {
 			return
 		}
 		actual = append(actual, decoded...)
-		d := pals.PlainText{
+		d := pals.CTC{PlainText: pals.PlainText{
 			Plaintext:      decoded,
 			CryptoMaterial: pals.CryptoMaterial{Key: Key, Nonce: nonce},
-		}
-		c, err := pals.Encrypt(pals.CTC, d)
+		}}
+		c, err := d.Encrypt()
 		if err != nil {
 			t.Errorf("Encrypt(%q) threw an error: %s", filename, err)
 			return
@@ -196,7 +197,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 }
 
 func TestImplementMersenneTwisterRNG(t *testing.T) {
-	m := pals.NewMersenneTwister()
+	m := mersenne.New()
 	unseededSum := 0
 	for i := 0; i < 123; i++ {
 		unseededSum += int(m.Uint32())
@@ -219,7 +220,7 @@ func TestImplementMersenneTwisterRNG(t *testing.T) {
 func TestDiscoverSeed(t *testing.T) {
 	t.Skip("this test contians a lot of randomized waiting, by design.")
 	// run this test with `-timeout 0`
-	m := pals.NewMersenneTwister()
+	m := mersenne.New()
 	mathRand.Seed(time.Now().Unix())
 	waitAtLeast := int32(40)
 	waitAtMost := int32(1000)
@@ -251,12 +252,12 @@ func TestDiscoverSeed(t *testing.T) {
 }
 
 func TestCloneMT19937(t *testing.T) {
-	m := pals.NewMersenneTwister()
-	clone := pals.NewMersenneTwister()
+	m := mersenne.New()
+	clone := mersenne.New()
 	m.Seed(int(time.Now().UnixNano()))
 	const n = 624
 	for i := 0; i < n; i++ {
-		clone.State[i] = pals.Untemper(m.Uint32())
+		clone.State[i] = mersenne.Untemper(m.Uint32())
 	}
 	// now the States are the same, but the clone.Index is `notSeeded` and m.Index is `n`.
 	clone.Index = n
@@ -270,17 +271,16 @@ func TestCloneMT19937(t *testing.T) {
 func TestMT19937Encryption(t *testing.T) {
 	Key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
-	d := pals.PlainText{
+	d := pals.AES_MT{PlainText: pals.PlainText{
 		Plaintext:      original,
 		CryptoMaterial: pals.CryptoMaterial{Key: Key},
-	}
-	c, err := pals.Encrypt(pals.MT, d)
+	}}
+	c, err := d.Encrypt()
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-
-	p, err := pals.Decrypt(pals.MT, c)
+	p, err := pals.AES_MT{EncryptedText: c}.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
@@ -314,7 +314,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 
 	// try all the possible Keys until we find one that generates the known sequence in merseeneValueSlice
 	for i := 0; i < MersenneSeedSpace; i++ {
-		m := pals.NewMersenneTwister()
+		m := mersenne.New()
 		m.Seed(i)
 
 		size := len(c.Ciphertext) / pals.MersenneStreamBlockSize

@@ -8,21 +8,22 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func appendAndEncrypt(a []byte) pals.EncryptionFn {
 	return func(plain []byte) (pals.EncryptedText, error) {
-		d := pals.PlainText{Plaintext: append(plain, a...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}
-		return pals.Encrypt(pals.ECB, d)
+		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(plain, a...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}}
+		return d.Encrypt()
 	}
 }
 
 func prependAndAppendAndEncrypt(a []byte) pals.EncryptionFn {
 	return func(plain []byte) (pals.EncryptedText, error) {
-		d := pals.PlainText{Plaintext: append(append(utils.FixedBytes, plain...), a...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}
-		return pals.Encrypt(pals.ECB, d)
+		d := pals.AES_ECB{PlainText: pals.PlainText{Plaintext: append(append(utils.FixedBytes, plain...), a...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}}
+		return d.Encrypt()
 	}
 }
 
@@ -75,7 +76,7 @@ func profileFor(email []byte) profile {
 
 func encryptedProfileFor(email []byte) (pals.EncryptedText, error) {
 	p := profileFor(email).encode()
-	return pals.Encrypt(pals.ECB, pals.PlainText{Plaintext: []byte(p), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}})
+	return pals.AES_ECB{PlainText: pals.PlainText{Plaintext: []byte(p), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}}}.Encrypt()
 }
 
 func getBytesOfLen(l int) []byte {
@@ -91,12 +92,12 @@ func buildAdminProfile(email string) (pals.EncryptedText, error) {
 	}
 	emailUIDBlock := t.Ciphertext[0 : 2*aes.BlockSize]
 	// produce adminPPPPPP block
-	a := pals.PKCSPadding([]byte("admin"), aes.BlockSize)
+	a := padding.PKCSPadding([]byte("admin"), aes.BlockSize)
 	emailStub := append(getBytesOfLen(aes.BlockSize-len("email=")), a...)
 	t, err = encryptedProfileFor(emailStub)
 	if err != nil {
 		return pals.EncryptedText{}, err
 	}
 	adminBlock := t.Ciphertext[aes.BlockSize : 2*aes.BlockSize]
-	return pals.EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}, Padding: pals.PKCS}, err
+	return pals.EncryptedText{Ciphertext: append(emailUIDBlock, adminBlock...), CryptoMaterial: pals.CryptoMaterial{Key: utils.FixedKey}, Padding: padding.PKCS}, err
 }

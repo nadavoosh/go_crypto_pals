@@ -114,7 +114,7 @@ func TestDecrypt_AES_ECB_FromBase64File(t *testing.T) {
 	}
 	key := "YELLOW SUBMARINE"
 	decoded, err := utils.ParseBase64(strings.Join(lines, ""))
-	got, err := pals.DecryptECB(pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: []byte(key)}})
+	got, err := pals.AES_ECB{EncryptedText: pals.EncryptedText{Ciphertext: decoded, CryptoMaterial: pals.CryptoMaterial{Key: []byte(key)}}}.Decrypt()
 	if err != nil {
 		t.Errorf("Decrypt_AES_ECB_b64(input) threw an error: %s", err)
 	}

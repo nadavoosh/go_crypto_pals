@@ -11,58 +11,17 @@ import (
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-type AESMode int
-
 // modes for encryption
 const (
 	ECB AESMode = 0
 	CBC AESMode = 1
-	CTC AESMode = 2
-	MT  AESMode = 3
 )
 
-func Encrypt(mode AESMode, d PlainText) (EncryptedText, error) {
-	switch mode {
-	case ECB:
-		return encryptECB(d)
-	case CBC:
-		if d.IV == nil {
-			IV, err := utils.GenerateRandomBlock()
-			if err != nil {
-				return EncryptedText{}, err
-			}
-			d.IV = IV
-		}
-		return encryptCBC(d)
-	case CTC:
-		return encryptCTC(d)
-	case MT:
-		return encryptMT(d)
-	default:
-		return EncryptedText{}, fmt.Errorf("Mode %d unknown", mode)
-	}
-}
+type AESMode int
 
-func Decrypt(mode AESMode, e EncryptedText) (PlainText, error) {
-	switch mode {
-	case ECB:
-		return DecryptECB(e)
-	case CBC:
-		if e.IV == nil {
-			IV, err := utils.GenerateRandomBlock()
-			if err != nil {
-				return PlainText{}, err
-			}
-			e.IV = IV
-		}
-		return DecryptCBC(e)
-	case CTC:
-		return decryptCTC(e)
-	case MT:
-		return decryptMT(e)
-	default:
-		return PlainText{}, fmt.Errorf("Mode %d unknown", mode)
-	}
+type AES interface {
+	Encrypt() (EncryptedText, error)
+	Decrypt() (PlainText, error)
 }
 
 func encryptSingleBlock(cipher cipher.Block, Plaintext []byte) []byte {
@@ -153,9 +112,9 @@ func (o Encryptor) getPlaintext() PlainText {
 func (o Encryptor) Encrypt() (EncryptedText, error) {
 	switch o.mode {
 	case ECB:
-		return Encrypt(ECB, o.getPlaintext())
+		return AES_ECB{PlainText: o.getPlaintext()}.Encrypt()
 	case CBC:
-		return Encrypt(CBC, o.getPlaintext())
+		return AES_CBC{PlainText: o.getPlaintext()}.Encrypt()
 	}
-	return EncryptedText{}, fmt.Errorf("Mode %d unknown", o.mode)
+	return EncryptedText{}, fmt.Errorf("Mode %v is unknown", o.mode)
 }

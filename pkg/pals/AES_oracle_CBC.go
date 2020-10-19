@@ -5,13 +5,14 @@ import (
 	"crypto/aes"
 	"fmt"
 
+	"github.com/nadavoosh/go_crypto_pals/pkg/padding"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func GetValidationFnForOracle(Key []byte) ValidationFn {
 	return func(Ciphertext, IV []byte) (bool, error) {
 		e := EncryptedText{Ciphertext: Ciphertext, CryptoMaterial: CryptoMaterial{Key: Key, IV: IV}}
-		_, err := Decrypt(CBC, e)
+		_, err := AES_CBC{EncryptedText: e}.Decrypt()
 		if err != nil {
 			if err.Error() == "Invalid Padding" {
 				return false, nil
@@ -42,7 +43,7 @@ func (c CBCPaddingOracle) DecryptCBCPadding() ([]byte, error) {
 		finalPlaintext = append(finalPlaintext, next...)
 		prevCipher = chunks[k]
 	}
-	return RemovePKCSPadding(finalPlaintext), nil
+	return padding.RemovePKCSPadding(finalPlaintext), nil
 }
 func (c CBCPaddingOracle) calculateNextByte(block, Plaintext []byte, j int) (byte, error) {
 	base := bytes.Repeat([]byte{0}, aes.BlockSize-j)
