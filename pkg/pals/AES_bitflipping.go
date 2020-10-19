@@ -7,11 +7,11 @@ import (
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-func EncryptUserData(input []byte) (EncryptedText, error) {
+func EncryptUserData(input []byte) (Encrypted, error) {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
 	Plaintext := append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
-	return AES_CBC{PlainText: PlainText{
+	return AES_CBC{Plain: Plain{
 		Plaintext: Plaintext,
 	}}.Encrypt(utils.FixedKey)
 }
@@ -49,8 +49,8 @@ func parseString(s string) map[string]string {
 	return m
 }
 
-func DetectAdminString(e EncryptedText) (bool, error) {
-	plain, err := AES_CBC{EncryptedText: e}.Decrypt(utils.FixedKey)
+func DetectAdminString(e Encrypted) (bool, error) {
+	plain, err := AES_CBC{Encrypted: e}.Decrypt(utils.FixedKey)
 	if err != nil {
 		return false, err
 	}

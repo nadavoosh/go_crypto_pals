@@ -32,11 +32,11 @@ func TestRemovePKCS7Padding(t *testing.T) {
 
 func TestEncryptECB(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
-	c, err := pals.NewAESECB(pals.PlainText{Plaintext: []byte(set1.FunkyMusicPadded)}).Encrypt(key)
+	c, err := pals.NewAESECB(pals.Plain{Plaintext: []byte(set1.FunkyMusicPadded)}).Encrypt(key)
 	if err != nil {
 		t.Errorf("EncryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
 	}
-	cPrime := pals.AES_ECB{EncryptedText: c}
+	cPrime := pals.AES_ECB{Encrypted: c}
 	got, err := cPrime.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptECB(%q) threw an error: %s", set1.FunkyMusicPadded, err)
@@ -50,12 +50,12 @@ func TestEncryptAESCBC(t *testing.T) {
 	key := []byte("YELLOW SUBMARINE")
 	in := "NADAVRECCAAAA"
 	IV := pals.RepeatBytesToLegnth([]byte{1}, aes.BlockSize)
-	c, err := pals.AES_CBC{PlainText: pals.PlainText{Plaintext: []byte(in), IV: IV}}.Encrypt(key)
+	c, err := pals.AES_CBC{Plain: pals.Plain{Plaintext: []byte(in), IV: IV}}.Encrypt(key)
 	if err != nil {
 		t.Errorf("encryptCBC(%q) threw an error: %s", in, err)
 	}
-	in2 := pals.EncryptedText{Ciphertext: []byte(c.Ciphertext), IV: IV}
-	got, err := pals.AES_CBC{EncryptedText: in2}.Decrypt(key)
+	in2 := pals.Encrypted{Ciphertext: []byte(c.Ciphertext), IV: IV}
+	got, err := pals.AES_CBC{Encrypted: in2}.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in2, err)
 	}
@@ -71,9 +71,9 @@ func TestEncryptCBC(t *testing.T) {
 		t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 	}
 	key := []byte("YELLOW SUBMARINE")
-	in := pals.EncryptedText{Ciphertext: decoded, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
+	in := pals.Encrypted{Ciphertext: decoded, IV: pals.RepeatBytesToLegnth([]byte{0}, aes.BlockSize)}
 
-	got, err := pals.AES_CBC{EncryptedText: in}.Decrypt(key)
+	got, err := pals.AES_CBC{Encrypted: in}.Decrypt(key)
 	if err != nil {
 		t.Errorf("DecryptCBC(%v) threw an error: %s", in, err)
 	}
@@ -133,7 +133,7 @@ func TestEncryptProfile(t *testing.T) {
 	if err != nil {
 		t.Errorf("Encrypt threw an error: %s", err)
 	}
-	encPrime := pals.AES_ECB{EncryptedText: enc}
+	encPrime := pals.AES_ECB{Encrypted: enc}
 	role, err := encPrime.Decrypt(utils.FixedKey)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
@@ -152,7 +152,7 @@ func TestCreateAdminProfile(t *testing.T) {
 		t.Errorf("BuildAdminProfile threw an error: %s", err)
 		return
 	}
-	encPrime := pals.AES_ECB{EncryptedText: enc}
+	encPrime := pals.AES_ECB{Encrypted: enc}
 	role, err := encPrime.Decrypt(utils.FixedKey)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)

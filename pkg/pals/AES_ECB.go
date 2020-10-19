@@ -7,42 +7,42 @@ import (
 )
 
 type AES_ECB struct {
-	PlainText     PlainText
-	EncryptedText EncryptedText
+	Plain     Plain
+	Encrypted Encrypted
 }
 
-func NewAESECB(p PlainText) AES_ECB {
-	return AES_ECB{PlainText: p}
+func NewAESECB(p Plain) AES_ECB {
+	return AES_ECB{Plain: p}
 }
 
-func (c AES_ECB) Decrypt(k Key) (PlainText, error) {
+func (c AES_ECB) Decrypt(k Key) (Plain, error) {
 	cipher, err := aes.NewCipher(k)
 	if err != nil {
-		return PlainText{}, err
+		return Plain{}, err
 	}
 	var Plaintext []byte
-	blocks := chunk(c.EncryptedText.Ciphertext, aes.BlockSize)
+	blocks := chunk(c.Encrypted.Ciphertext, aes.BlockSize)
 	for _, block := range blocks {
 		Plaintext = append(Plaintext, decryptSingleBlock(cipher, block)...)
 	}
-	if c.EncryptedText.Padding == padding.PKCS {
+	if c.Encrypted.Padding == padding.PKCS {
 		Plaintext = padding.RemovePKCSPadding(Plaintext)
 	}
-	return PlainText{Plaintext: Plaintext}, nil
+	return Plain{Plaintext: Plaintext}, nil
 }
 
-func (c AES_ECB) Encrypt(k Key) (EncryptedText, error) {
+func (c AES_ECB) Encrypt(k Key) (Encrypted, error) {
 	cipher, err := aes.NewCipher(k)
 	if err != nil {
-		return EncryptedText{}, err
+		return Encrypted{}, err
 	}
 	var Ciphertext []byte
-	padded := padding.PKCSPadding(c.PlainText.Plaintext, aes.BlockSize)
+	padded := padding.PKCSPadding(c.Plain.Plaintext, aes.BlockSize)
 	blocks := chunk(padded, aes.BlockSize)
 	for _, block := range blocks {
 		Ciphertext = append(Ciphertext, encryptSingleBlock(cipher, block)...)
 	}
-	return EncryptedText{Ciphertext: Ciphertext, Padding: padding.PKCS}, nil
+	return Encrypted{Ciphertext: Ciphertext, Padding: padding.PKCS}, nil
 }
 
 func SmellsOfECB(b []byte) bool {

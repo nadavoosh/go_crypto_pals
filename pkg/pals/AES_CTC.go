@@ -9,8 +9,8 @@ import (
 )
 
 type CTR struct {
-	PlainText     PlainText
-	EncryptedText EncryptedText
+	Plain     Plain
+	Encrypted Encrypted
 	Nonce         int64
 }
 
@@ -29,9 +29,9 @@ func getKeystream(Key []byte, nonce, count int64) ([]byte, error) {
 	return encryptSingleBlock(c, counter), nil
 }
 
-func (c CTR) Encrypt(k Key) (EncryptedText, error) {
-	e := EncryptedText{}
-	blocks := chunk(c.PlainText.Plaintext, aes.BlockSize)
+func (c CTR) Encrypt(k Key) (Encrypted, error) {
+	e := Encrypted{}
+	blocks := chunk(c.Plain.Plaintext, aes.BlockSize)
 	for i, block := range blocks {
 		Keystream, err := getKeystream(k, c.Nonce, int64(i))
 		if err != nil {
@@ -44,9 +44,9 @@ func (c CTR) Encrypt(k Key) (EncryptedText, error) {
 	return e, nil
 }
 
-func (c CTR) Decrypt(k Key) (PlainText, error) {
-	d := PlainText{}
-	blocks := chunk(c.EncryptedText.Ciphertext, aes.BlockSize)
+func (c CTR) Decrypt(k Key) (Plain, error) {
+	d := Plain{}
+	blocks := chunk(c.Encrypted.Ciphertext, aes.BlockSize)
 	for i, block := range blocks {
 		Keystream, err := getKeystream(k, c.Nonce, int64(i))
 		if err != nil {

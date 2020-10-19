@@ -59,7 +59,7 @@ func TestCTRCipher(t *testing.T) {
 	}
 	key := []byte("YELLOW SUBMARINE")
 	nonce := int64(0)
-	e := pals.CTR{EncryptedText: pals.EncryptedText{
+	e := pals.CTR{Encrypted: pals.Encrypted{
 		Ciphertext: cipherterxt,
 	}, Nonce: nonce}
 	p, err := e.Decrypt(key)
@@ -72,7 +72,7 @@ func TestCTRCipher(t *testing.T) {
 		t.Errorf("Decrypt returned: %s, want %s", p.Plaintext, want)
 		return
 	}
-	d := pals.CTR{PlainText: pals.PlainText{
+	d := pals.CTR{Plain: pals.Plain{
 		Plaintext: []byte(want),
 	}, Nonce: nonce}
 	c, err := d.Encrypt(key)
@@ -112,7 +112,7 @@ func TestBreakCTRWithGuessing(t *testing.T) {
 			t.Errorf("ReadBase64File(%q) threw an error: %s", filename, err)
 			return
 		}
-		d := pals.CTR{PlainText: pals.PlainText{
+		d := pals.CTR{Plain: pals.Plain{
 			Plaintext: decoded,
 		}, Nonce: nonce}
 		c, err := d.Encrypt(key)
@@ -147,7 +147,7 @@ func TestBreakCTRStatistically(t *testing.T) {
 			return
 		}
 		actual = append(actual, decoded...)
-		d := pals.CTR{PlainText: pals.PlainText{
+		d := pals.CTR{Plain: pals.Plain{
 			Plaintext: decoded,
 		}, Nonce: nonce}
 		c, err := d.Encrypt(key)
@@ -267,7 +267,7 @@ func TestCloneMT19937(t *testing.T) {
 func TestMT19937Encryption(t *testing.T) {
 	key := utils.GenerateKey()
 	original := []byte("YELLOWSUBMARINE")
-	d := pals.AES_MT{PlainText: pals.PlainText{
+	d := pals.AES_MT{Plain: pals.Plain{
 		Plaintext: original,
 	}}
 	c, err := d.Encrypt(key)
@@ -275,7 +275,7 @@ func TestMT19937Encryption(t *testing.T) {
 		t.Errorf("Encrypt threw an error: %s", err)
 		return
 	}
-	p, err := pals.AES_MT{EncryptedText: c}.Decrypt(key)
+	p, err := pals.AES_MT{Encrypted: c}.Decrypt(key)
 	if err != nil {
 		t.Errorf("Decrypt threw an error: %s", err)
 		return
@@ -333,7 +333,7 @@ func TestBreakMT19937Encryption(t *testing.T) {
 	}
 }
 
-func tokenOracle() (pals.EncryptedText, error) {
+func tokenOracle() (pals.Encrypted, error) {
 	Plaintext := bytes.Repeat(utils.ByteA, mathRand.Intn(20)+4)
 	return mersenneEncrypt(Plaintext, uint16(time.Now().Unix()))
 }

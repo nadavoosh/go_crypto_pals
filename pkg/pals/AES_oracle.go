@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-type EncryptionFn func(plain []byte) (EncryptedText, error)
+type EncryptionFn func(plain []byte) (Encrypted, error)
 type ValidationFn func(cipher, IV []byte) (bool, error)
 type AESOracleMode int
 

@@ -9,7 +9,7 @@ import (
 
 const mersenneNumberBytes = 4 // each mersenne number is 32 bits long, which is 4 bytes of Keystream
 
-func padAndEncryptFromSet() (pals.EncryptedText, error) {
+func padAndEncryptFromSet() (pals.Encrypted, error) {
 	strings := []string{
 		"MDAwMDAwTm93IHRoYXQgdGhlIHBhcnR5IGlzIGp1bXBpbmc=",
 		"MDAwMDAxV2l0aCB0aGUgYmFzcyBraWNrZWQgaW4gYW5kIHRoZSBWZWdhJ3MgYXJlIHB1bXBpbic=",
@@ -25,17 +25,17 @@ func padAndEncryptFromSet() (pals.EncryptedText, error) {
 	// Plaintext, err := ParseBase64(strings[rand.Intn(len(strings)-1)])
 	Plaintext, err := utils.ParseBase64(strings[0])
 	if err != nil {
-		return pals.EncryptedText{}, err
+		return pals.Encrypted{}, err
 	}
-	d := pals.PlainText{Plaintext: []byte(Plaintext), IV: utils.GenerateKey()}
-	return pals.AES_CBC{PlainText: d}.Encrypt(utils.FixedKey)
+	d := pals.Plain{Plaintext: []byte(Plaintext), IV: utils.GenerateKey()}
+	return pals.AES_CBC{Plain: d}.Encrypt(utils.FixedKey)
 }
 
-func mersenneEncrypt(Plaintext []byte, seed uint16) (pals.EncryptedText, error) {
+func mersenneEncrypt(Plaintext []byte, seed uint16) (pals.Encrypted, error) {
 	KeyByteArray := make([]byte, 2)
 	binary.BigEndian.PutUint16(KeyByteArray, seed)
 
-	d := pals.AES_MT{PlainText: pals.PlainText{
+	d := pals.AES_MT{Plain: pals.Plain{
 		Plaintext: Plaintext,
 	}}
 	return d.Encrypt(KeyByteArray)
