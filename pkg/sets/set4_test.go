@@ -35,3 +35,26 @@ func TestRandomAccessReadWriteAESCTR(t *testing.T) {
 		t.Errorf("breakRandomAccessReadWriteAESCTR didn't work")
 	}
 }
+
+func TestCTRBitflipping(t *testing.T) {
+	in := []byte(";admin=true")
+	flipped := flipBitsToHide(in)
+	userData, err := encryptUserDataCTR(flipped)
+	if err != nil {
+		t.Errorf("encryptUserDataCTR threw an error: %s", err)
+		return
+	}
+	b, err := modifyCiphertextForAdmin(userData)
+	if err != nil {
+		t.Errorf("ModifyCiphertextForAdmin threw an error: %s", err)
+		return
+	}
+	admin, err := detectAdminStringCTR(b)
+	if err != nil {
+		t.Errorf("detectAdminStringCTR(f) threw an error: %s", err)
+		return
+	}
+	if !admin {
+		t.Errorf("detectAdminStringCTR incorrectly missed the admin string for: %s", in)
+	}
+}

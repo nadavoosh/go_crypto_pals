@@ -1,7 +1,10 @@
 package sets
 
 import (
+	"fmt"
+
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func breakRandomAccessReadWriteAESCTR(c pals.Ciphertext, key pals.Key) (pals.Plaintext, error) {
@@ -21,4 +24,21 @@ func breakRandomAccessReadWriteAESCTR(c pals.Ciphertext, key pals.Key) (pals.Pla
 		}
 	}
 	return p, nil
+}
+
+func encryptUserDataCTR(input []byte) (pals.Ciphertext, error) {
+	p := getUserData(input)
+	d := pals.CTR{Plaintext: p}
+	c, err := d.Encrypt(utils.FixedKey)
+	return c, err
+}
+
+func detectAdminStringCTR(e pals.Ciphertext) (bool, error) {
+	a := pals.CTR{Ciphertext: e}
+	plain, err := a.Decrypt(utils.FixedKey)
+	if err != nil {
+		return false, err
+	}
+	fmt.Println(string(plain))
+	return detectAdminString(plain), nil
 }
