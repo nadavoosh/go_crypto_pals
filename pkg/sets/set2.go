@@ -102,10 +102,14 @@ func buildAdminProfile(email string) (pals.Ciphertext, error) {
 	return pals.Ciphertext(append(emailUIDBlock, adminBlock...)), err
 }
 
-func encryptUserData(input []byte) (pals.Ciphertext, pals.IV, error) {
+func getUserData(input []byte) []byte {
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
-	p := append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
+	return append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
+}
+
+func encryptUserDataCBC(input []byte) (pals.Ciphertext, pals.IV, error) {
+	p := getUserData(input)
 	d := pals.AES_CBC{Plaintext: p}
 	c, err := d.Encrypt(utils.FixedKey)
 	return c, d.IV, err
@@ -137,6 +141,8 @@ func parseString(s string) map[string]string {
 		p := splitString(pair, "=")
 		if len(p) > 1 {
 			m[utils.Unescape(p[0])] = utils.Unescape(p[1])
+		} else if len(p) == 1 {
+			m[utils.Unescape(p[0])] = ""
 		} else {
 			fmt.Printf("No `=` found in %s\n", pair)
 		}
@@ -144,17 +150,21 @@ func parseString(s string) map[string]string {
 	return m
 }
 
-func detectAdminString(e pals.Ciphertext, iv pals.IV) (bool, error) {
+func detectAdminStringCBC(e pals.Ciphertext, iv pals.IV) (bool, error) {
 	a := pals.AES_CBC{Ciphertext: e, IV: iv}
 	plain, err := a.Decrypt(utils.FixedKey)
 	if err != nil {
 		return false, err
 	}
-	m := parseString(string(plain))
+	return detectAdminString(plain), nil
+}
+
+func detectAdminString(p []byte) bool {
+	m := parseString(string(p))
 	if _, ok := m["admin"]; ok {
-		return true, nil
+		return true
 	}
-	return false, nil
+	return false
 }
 
 func flipBitsToHide(block []byte) []byte {
