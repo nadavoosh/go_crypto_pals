@@ -1,11 +1,11 @@
 package pals
 
 import (
+	"bytes"
 	"crypto/aes"
 	"encoding/binary"
 
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
-	// "fmt"
 )
 
 type CTR struct {
@@ -57,4 +57,44 @@ func (c CTR) Decrypt(k Key) (Plaintext, error) {
 		d = append(d, plain...)
 	}
 	return d, nil
+}
+
+func EditCTR(ciphertext Ciphertext, key Key, newtext Plaintext, offset int) (Ciphertext, error) {
+	var defaultNonce int64
+	res := make([]byte, len(ciphertext)) //TODO handle case where len(newtext) + offset is greater than this
+
+	seekStart := offset / aes.BlockSize
+	seekStop := (offset + len(newtext)) / aes.BlockSize
+
+	prefill := offset % aes.BlockSize
+
+	if (prefill+len(newtext))%aes.BlockSize > 0 {
+		seekStop++
+	}
+
+	paddedNewtext := append(bytes.Repeat([]byte{0}, offset), newtext...)
+	newBlocks := chunk(paddedNewtext, aes.BlockSize)
+
+	res = ciphertext[:aes.BlockSize*seekStart]
+	// fmt.Printf("seekStart %v, seekStop %v\n", seekStart, seekStop)
+	for i := seekStart; i < seekStop; i++ {
+		// fmt.Printf("block %d\n", i)
+		// fmt.Printf("blocks[i] %d\n", blocks[i])
+		Keystream, err := getKeystream(key, defaultNonce, int64(i))
+		if err != nil {
+			return nil, err
+		}
+		trimmedKeystream := Keystream[:len(newBlocks[i])]
+		newEncryptedBlock := utils.FlexibleXor(newBlocks[i], trimmedKeystream)
+		// fmt.Printf("resultBlock %d\n", resultBlock)
+		res = append(res, newEncryptedBlock...)
+	}
+	if len(ciphertext) > len(res) {
+		res = append(res, ciphertext[len(ciphertext):]...)
+	}
+	return res, nil
+}
+
+func replace(orig, new []byte, offset int) []byte {
+	return append(append(orig[:offset], new...), orig[offset+len(new):]...)
 }

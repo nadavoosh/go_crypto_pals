@@ -8,11 +8,6 @@ import (
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
-type Ciphertext []byte
-type Plaintext []byte
-type IV []byte
-type Key []byte
-
 func (d Plaintext) score() float64 {
 	if d == nil {
 		// return a high score for uninitialized Plain

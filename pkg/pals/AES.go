@@ -24,6 +24,11 @@ type AES interface {
 	Decrypt(k Key) (Plaintext, error)
 }
 
+type Ciphertext []byte
+type Plaintext []byte
+type IV []byte
+type Key []byte
+
 func encryptSingleBlock(cipher cipher.Block, Plaintext []byte) []byte {
 	dst := make([]byte, aes.BlockSize)
 	cipher.Encrypt(dst, Plaintext)
