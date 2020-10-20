@@ -94,7 +94,3 @@ func EditCTR(ciphertext Ciphertext, key Key, newtext Plaintext, offset int) (Cip
 	}
 	return res, nil
 }
-
-func replace(orig, new []byte, offset int) []byte {
-	return append(append(orig[:offset], new...), orig[offset+len(new):]...)
-}
