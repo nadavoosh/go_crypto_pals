@@ -125,3 +125,12 @@ func Unescape(input string) string {
 	r := strings.NewReplacer("\\=", "=", "\\;", ";")
 	return r.Replace(input)
 }
+
+func IsAllAscii(input []byte) bool {
+	for i := 0; i < len(input); i++ {
+		if input[i] > 128 {
+			return false
+		}
+	}
+	return true
+}

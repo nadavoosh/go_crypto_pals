@@ -1,11 +1,13 @@
 package sets
 
 import (
-	"strings"
-	"testing"
-
+	"bytes"
+	// "fmt"
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
+	"regexp"
+	"strings"
+	"testing"
 )
 
 func TestRandomAccessReadWriteAESCTR(t *testing.T) {
@@ -59,11 +61,32 @@ func TestCTRBitflipping(t *testing.T) {
 	}
 }
 
-func SkipTestKeyRecoveryfromCBCwithIVEqualToKey(t *testing.T) {
+func TestKeyRecoveryfromCBCwithIVEqualToKey(t *testing.T) {
 	data := []byte("NADAVRECCANADAVRECCANADAVRECCA")
-	_, err := encryptUserDataCBCWithKeyIV(data)
+	c, err := encryptCBCWithKeyIV(data)
 	if err != nil {
 		t.Errorf("encryptUserDataCBCWithKeyIV threw an error: %s", err)
 		return
+	}
+	blocksize := 16
+	// Modify the message (you are now the attacker):
+	// C_1, C_2, C_3 -> C_1, 0, C_1
+	attackerMessage := append(append(c[:blocksize], bytes.Repeat([]byte{0}, blocksize)...), c[:blocksize]...)
+	// Decrypt the message (you are now the receiver) and raise the appropriate error if high-ASCII is found
+	_, err = decryptCBCWithKeyIV(attackerMessage)
+	if err == nil {
+		t.Errorf("SkipTestKeyRecoveryfromCBCwithIVEqualToKey didn't work")
+	}
+	re1 := regexp.MustCompile(`Error, invalid values found in user input: (.*?)$`)
+	result_slice := re1.FindStringSubmatch(err.Error())
+	// P'_1 XOR P'_3
+	res := []byte(result_slice[1])
+	key, err := utils.FixedXor(res[:blocksize], res[blocksize*2:blocksize*3])
+	if err != nil {
+		t.Errorf("utils.FixedXor threw an error: %s", err)
+		return
+	}
+	if string(key) != string(utils.FixedKey) {
+		t.Errorf("SkipTestKeyRecoveryfromCBCwithIVEqualToKey didn't work")
 	}
 }

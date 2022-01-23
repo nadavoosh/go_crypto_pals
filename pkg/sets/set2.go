@@ -103,17 +103,8 @@ func buildAdminProfile(email string) (pals.Ciphertext, error) {
 	return pals.Ciphertext(append(emailUIDBlock, adminBlock...)), err
 }
 
-func isAllAscii(input []byte) bool {
-	for i := 0; i < len(input); i++ {
-		if input[i] > 128 {
-			return false
-		}
-	}
-	return true
-}
-
 func getUserData(input []byte) ([]byte, error) {
-	if !isAllAscii(input) {
+	if !utils.IsAllAscii(input) {
 		return nil, errors.New("Non ASCII values found in user input")
 	}
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
