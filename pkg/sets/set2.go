@@ -3,6 +3,7 @@ package sets
 import (
 	"bytes"
 	"crypto/aes"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -102,14 +103,20 @@ func buildAdminProfile(email string) (pals.Ciphertext, error) {
 	return pals.Ciphertext(append(emailUIDBlock, adminBlock...)), err
 }
 
-func getUserData(input []byte) []byte {
+func getUserData(input []byte) ([]byte, error) {
+	if !utils.IsAllAscii(input) {
+		return nil, errors.New("Non ASCII values found in user input")
+	}
 	prepend := []byte("comment1=cooking%20MCs;userdata=")
 	after := []byte(";comment2=%20like%20a%20pound%20of%20bacon")
-	return append(prepend, append([]byte(utils.Escape(string(input))), after...)...)
+	return append(prepend, append([]byte(utils.Escape(string(input))), after...)...), nil
 }
 
 func encryptUserDataCBC(input []byte) (pals.Ciphertext, pals.IV, error) {
-	p := getUserData(input)
+	p, err := getUserData(input)
+	if err != nil {
+		return nil, nil, err
+	}
 	d := pals.AES_CBC{Plaintext: p}
 	c, err := d.Encrypt(utils.FixedKey)
 	return c, d.IV, err
