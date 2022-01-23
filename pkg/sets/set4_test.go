@@ -58,3 +58,12 @@ func TestCTRBitflipping(t *testing.T) {
 		t.Errorf("detectAdminStringCTR incorrectly missed the admin string for: %s", in)
 	}
 }
+
+func SkipTestKeyRecoveryfromCBCwithIVEqualToKey(t *testing.T) {
+	data := []byte("NADAVRECCANADAVRECCANADAVRECCA")
+	_, err := encryptUserDataCBCWithKeyIV(data)
+	if err != nil {
+		t.Errorf("encryptUserDataCBCWithKeyIV threw an error: %s", err)
+		return
+	}
+}

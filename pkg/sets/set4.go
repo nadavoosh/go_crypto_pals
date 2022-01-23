@@ -1,8 +1,6 @@
 package sets
 
 import (
-	"fmt"
-
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
@@ -27,7 +25,10 @@ func breakRandomAccessReadWriteAESCTR(c pals.Ciphertext, key pals.Key) (pals.Pla
 }
 
 func encryptUserDataCTR(input []byte) (pals.Ciphertext, error) {
-	p := getUserData(input)
+	p, err := getUserData(input)
+	if err != nil {
+		return nil, err
+	}
 	d := pals.CTR{Plaintext: p}
 	c, err := d.Encrypt(utils.FixedKey)
 	return c, err
@@ -39,6 +40,21 @@ func detectAdminStringCTR(e pals.Ciphertext) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	fmt.Println(string(plain))
 	return detectAdminString(plain), nil
+}
+
+func encryptUserDataCBCWithKeyIV(input []byte) (pals.Ciphertext, error) {
+	p, err := getUserData(input)
+	if err != nil {
+		return nil, err
+	}
+	d := pals.AES_CBC{Plaintext: p, IV: utils.FixedKey}
+	c, err := d.Encrypt(utils.FixedKey)
+	return c, err
+}
+
+func decryptUserDataCBCWithKeyIV(e pals.Ciphertext) (pals.Plaintext, error) {
+	d := pals.AES_CBC{Ciphertext: e, IV: utils.FixedKey}
+	c, err := d.Decrypt(utils.FixedKey)
+	return c, err
 }
