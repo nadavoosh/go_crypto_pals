@@ -62,3 +62,14 @@ func (cbc *AES_CBC) Decrypt(k Key) (Plaintext, error) {
 	d = padding.RemovePKCSPadding(d)
 	return d, nil
 }
+
+
+func (cbc *AES_CBC) EncryptWithKeyIV(k Key) (Ciphertext, error) {
+	cbc.IV = []byte(k)
+	return cbc.Encrypt(k)
+}
+
+func (cbc *AES_CBC) DecryptWithKeyIV(k Key) (Plaintext, error) {
+	cbc.IV = []byte(k)
+	return cbc.Decrypt(k)
+}

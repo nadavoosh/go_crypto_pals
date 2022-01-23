@@ -48,13 +48,13 @@ func encryptUserDataCBCWithKeyIV(input []byte) (pals.Ciphertext, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := pals.AES_CBC{Plaintext: p, IV: utils.FixedKey}
-	c, err := d.Encrypt(utils.FixedKey)
+	d := pals.AES_CBC{Plaintext: p}
+	c, err := d.EncryptWithKeyIV(utils.FixedKey)
 	return c, err
 }
 
 func decryptUserDataCBCWithKeyIV(e pals.Ciphertext) (pals.Plaintext, error) {
-	d := pals.AES_CBC{Ciphertext: e, IV: utils.FixedKey}
-	c, err := d.Decrypt(utils.FixedKey)
+	d := pals.AES_CBC{Ciphertext: e}
+	c, err := d.DecryptWithKeyIV(utils.FixedKey)
 	return c, err
 }
