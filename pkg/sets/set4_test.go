@@ -3,11 +3,12 @@ package sets
 import (
 	"bytes"
 	// "fmt"
-	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
-	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
 func TestRandomAccessReadWriteAESCTR(t *testing.T) {
@@ -88,5 +89,19 @@ func TestKeyRecoveryfromCBCwithIVEqualToKey(t *testing.T) {
 	}
 	if string(key) != string(utils.FixedKey) {
 		t.Errorf("SkipTestKeyRecoveryfromCBCwithIVEqualToKey didn't work")
+	}
+}
+
+func TestSha1KeyedMAC(t *testing.T) {
+	mac := secretPrefixMAC([]byte("NADAV"))
+	if verifySecretPrefixMAC([]byte("VADAN"), mac) {
+		t.Errorf("we have an issue with TestSha1KeyedMAC")
+	}
+}
+
+func TestForgeSha1KeyedMAC(t *testing.T) {
+	mac := secretPrefixMAC([]byte("comment1=cooking%20MCs;userdata=foo;comment2=%20like%20a%20pound%20of%20bacon"))
+	if verifySecretPrefixMAC([]byte("VADAN"), mac) {
+		t.Errorf("we have an issue with TestSha1KeyedMAC")
 	}
 }

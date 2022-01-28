@@ -2,7 +2,9 @@ package sets
 
 import (
 	"fmt"
+
 	"github.com/nadavoosh/go_crypto_pals/pkg/pals"
+	"github.com/nadavoosh/go_crypto_pals/pkg/sha1"
 	"github.com/nadavoosh/go_crypto_pals/pkg/utils"
 )
 
@@ -57,4 +59,12 @@ func decryptCBCWithKeyIV(e pals.Ciphertext) (pals.Plaintext, error) {
 		return nil, fmt.Errorf("Error, invalid values found in user input: %s", c)
 	}
 	return c, err
+}
+
+func secretPrefixMAC(msg []byte) [20]byte {
+	return sha1.Sum(append(utils.FixedKey, msg...))
+}
+
+func verifySecretPrefixMAC(msg []byte, mac [20]byte) bool {
+	return secretPrefixMAC(msg) == mac
 }
