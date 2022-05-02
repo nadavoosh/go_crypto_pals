@@ -1,5 +1,5 @@
 # go_crypto_pals
-solutions to the cryptopals challenge in go
+solutions to the [cryptopals challenges](https://cryptopals.com/sets) in go
 
 Run all test files with `go test` from the `pkg/sets` directory:
 
